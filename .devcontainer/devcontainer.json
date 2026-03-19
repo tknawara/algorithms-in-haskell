@@ -1,0 +1,31 @@
+{
+    "name": "C++ Kafka Development (Ubuntu 24.04)",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                // Use clangd for intellisense (it's faster/better for modern C++)
+                "cmake.configureOnOpen": true,
+                "editor.formatOnSave": true,
+                "clangd.path": "/usr/bin/clangd",
+                "clangd.arguments": [
+                    "--background-index",
+                    "--compile-commands-dir=build",
+                    "--clang-tidy",
+                    "--header-insertion=never"
+                ]
+            },
+            "extensions": [
+                "ms-vscode.cpptools",
+                "ms-vscode.cmake-tools",
+                "ms-vscode.cpptools-extension-pack",
+                "llvm-vs-code-extensions.vscode-clangd",
+                "ms-vscode.makefile-tools",
+                "ms-vscode.hexeditor"
+            ]
+        }
+    },
+    "remoteUser": "vscode"
+}
