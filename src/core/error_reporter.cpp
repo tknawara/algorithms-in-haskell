@@ -52,13 +52,8 @@ void ErrorReporter::report(const Span &span, const std::string &message,
   }
 
   // 5. Print the beautifully formatted error to stderr
-  std::cerr << ansi_bold << ansi_cyan << "[" << ctx.path << ":" << line << "] "
-            << ansi_red << "Error: " << ansi_reset << ansi_bold << message
-            << ansi_reset << "\n";
-
-  std::cerr << "    " << line_text << "\n";
-  std::cerr << "    " << ansi_bold << ansi_red << pointers << ansi_reset
-            << "\n\n";
+  std::cerr << "[" << "line " << line << "] "
+            << "Error: " << message << "\n";
 }
 
 void ErrorReporter::report_general(int line, const std::string &message) {
