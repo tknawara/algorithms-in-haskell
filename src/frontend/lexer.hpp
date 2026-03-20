@@ -8,7 +8,7 @@
 #include "core/source_manager.hpp"
 #include "core/span.hpp"
 
-enum class token_type {
+enum class TokenType {
   left_paren,
   right_paren,
   left_brace,
@@ -50,16 +50,15 @@ enum class token_type {
   eof
 };
 
-using literal_type = std::variant<std::monostate, double, std::string>;
+using LiteralType = std::variant<std::monostate, double, std::string>;
 
-// Also perfectly fits the struct idiom
 struct Token {
-  token_type type;
+  TokenType type;
   Span span;
-  literal_type literal;
+  LiteralType literal;
   int line;
 
-  Token(token_type t, Span s, literal_type l, int ln)
+  Token(TokenType t, Span s, LiteralType l, int ln)
       : type(t), span(s), literal(l), line(ln) {}
 };
 

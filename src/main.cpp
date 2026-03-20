@@ -6,55 +6,55 @@
 #include "core/error_reporter.hpp"
 #include "frontend/lexer.hpp"
 
-std::string format_token_type(token_type type) {
+std::string format_token_type(TokenType type) {
   switch (type) {
-  case token_type::left_paren:
+  case TokenType::left_paren:
     return "LEFT_PAREN";
-  case token_type::right_paren:
+  case TokenType::right_paren:
     return "RIGHT_PAREN";
-  case token_type::left_brace:
+  case TokenType::left_brace:
     return "LEFT_BRACE";
-  case token_type::right_brace:
+  case TokenType::right_brace:
     return "RIGHT_BRACE";
-  case token_type::comma:
+  case TokenType::comma:
     return "COMMA";
-  case token_type::dot:
+  case TokenType::dot:
     return "DOT";
-  case token_type::minus:
+  case TokenType::minus:
     return "MINUS";
-  case token_type::plus:
+  case TokenType::plus:
     return "PLUS";
-  case token_type::semicolon:
+  case TokenType::semicolon:
     return "SEMICOLON";
-  case token_type::star:
+  case TokenType::star:
     return "STAR";
-  case token_type::bang_equal:
+  case TokenType::bang_equal:
     return "BANG_EQUAL";
-  case token_type::bang:
+  case TokenType::bang:
     return "BANG";
-  case token_type::equal_equal:
+  case TokenType::equal_equal:
     return "EQUAL_EQUAL";
-  case token_type::equal:
+  case TokenType::equal:
     return "EQUAL";
-  case token_type::greater_equal:
+  case TokenType::greater_equal:
     return "GREATER_EQUAL";
-  case token_type::greater:
+  case TokenType::greater:
     return "GREATER";
-  case token_type::less_equal:
+  case TokenType::less_equal:
     return "LESS_EQUAL";
-  case token_type::less:
+  case TokenType::less:
     return "LESS";
-  case token_type::slash:
+  case TokenType::slash:
     return "SLASH";
-  case token_type::string_token:
+  case TokenType::string_token:
     return "STRING";
-  case token_type::number:
+  case TokenType::number:
     return "NUMBER";
-  case token_type::identifier:
+  case TokenType::identifier:
     return "IDENTIFIER";
-  case token_type::var_token:
+  case TokenType::var_token:
     return "VAR";
-  case token_type::eof:
+  case TokenType::eof:
     return "EOF";
   default:
     return "UNKNOWN";
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
   // 3. Print Output
   for (const auto &token : tokens) {
     std::string type_name = format_token_type(token.type);
-    std::string lexeme_text = (token.type == token_type::eof)
+    std::string lexeme_text = (token.type == TokenType::eof)
                                   ? ""
                                   : std::string(ctx.get_lexeme(token.span));
     std::string literal_text = "null";
