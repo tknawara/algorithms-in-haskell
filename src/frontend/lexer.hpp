@@ -52,6 +52,8 @@ enum class TokenType {
 
 using LiteralType = std::variant<std::monostate, double, std::string, bool>;
 
+std::string format_token_type(TokenType type);
+
 struct Token {
   TokenType type;
   Span span;
