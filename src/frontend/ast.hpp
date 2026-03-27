@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lexer.hpp"
+#include "frontend/lexer.hpp"
 #include <memory>
 #include <variant>
 

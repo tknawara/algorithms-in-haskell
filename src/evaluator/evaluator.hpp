@@ -1,9 +1,10 @@
 #pragma once
 
-#include "frontend/ast.hpp"
-#include "frontend/lexer.hpp"
 #include <stdexcept>
 #include <string>
+
+#include "frontend/ast.hpp"
+#include "frontend/lexer.hpp"
 
 using LoxValue = LiteralType;
 
@@ -18,5 +19,4 @@ class SourceContext;
 
 namespace evaluator {
 LoxValue evaluate(const Expr &expr);
-std::string to_string(const LoxValue &value);
 } // namespace evaluator

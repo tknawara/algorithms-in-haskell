@@ -37,111 +37,59 @@ std::string format_token_type(TokenType type) {
     return "EQUAL_EQUAL";
   case TokenType::equal:
     return "EQUAL";
-
   case TokenType::greater_equal:
-
     return "GREATER_EQUAL";
-
   case TokenType::greater:
-
     return "GREATER";
-
   case TokenType::less_equal:
-
     return "LESS_EQUAL";
-
   case TokenType::less:
-
     return "LESS";
-
   case TokenType::slash:
-
     return "SLASH";
-
   case TokenType::string_token:
-
     return "STRING";
-
   case TokenType::number:
-
     return "NUMBER";
-
   case TokenType::identifier:
-
     return "IDENTIFIER";
 
-    // Keywords
-
+  // Keywords
   case TokenType::and_token:
-
     return "AND";
-
   case TokenType::class_token:
-
     return "CLASS";
-
   case TokenType::else_token:
-
     return "ELSE";
-
   case TokenType::false_token:
-
     return "FALSE";
-
   case TokenType::fun:
-
     return "FUN";
-
   case TokenType::for_token:
-
     return "FOR";
-
   case TokenType::if_token:
-
     return "IF";
-
   case TokenType::nil_token:
-
     return "NIL";
-
   case TokenType::or_token:
-
     return "OR";
-
   case TokenType::print_token:
-
     return "PRINT";
-
   case TokenType::return_token:
-
     return "RETURN";
-
   case TokenType::super_token:
-
     return "SUPER";
-
   case TokenType::this_token:
-
     return "THIS";
-
   case TokenType::true_token:
-
     return "TRUE";
-
   case TokenType::var_token:
-
     return "VAR";
-
   case TokenType::while_token:
-
     return "WHILE";
-
   case TokenType::eof:
-
     return "EOF";
-
   default:
-
     return "UNKNOWN";
   }
 }

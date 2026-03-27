@@ -1,4 +1,4 @@
-#include "evaluator.hpp"
+#include "evaluator/evaluator.hpp"
 
 namespace evaluator {
 
@@ -42,6 +42,22 @@ struct EvaluatorVisitor {
 
   LoxValue operator()(const Binary &expr) const {
     LoxValue left = evaluate(*expr.left);
+
+    switch (expr.op.type) {
+    case TokenType::and_token: {
+      if (!is_truthy(left))
+        return left;
+      return evaluate(*expr.right);
+    } break;
+    case TokenType::or_token: {
+      if (is_truthy(left))
+        return left;
+      return evaluate(*expr.right);
+    } break;
+    default:
+      break; // Fall through to normal evaluation
+    }
+
     LoxValue right = evaluate(*expr.right);
 
     switch (expr.op.type) {
@@ -53,7 +69,7 @@ struct EvaluatorVisitor {
       auto lhs = check_number_operand(expr.op, left);
       auto rhs = check_number_operand(expr.op, right);
       if (rhs == 0) {
-        throw new RuntimeError(expr.op, "division by zero!");
+        throw RuntimeError(expr.op, "division by zero!");
       }
       return lhs / rhs;
     } break;
@@ -74,9 +90,28 @@ struct EvaluatorVisitor {
       throw RuntimeError(expr.op,
                          "Operands must be two numbers or two strings.");
     } break;
-
-      // ... You'll add logic for >, <, ==, != here ...
-
+    case TokenType::greater: {
+      return check_number_operand(expr.op, left) >
+             check_number_operand(expr.op, right);
+    } break;
+    case TokenType::greater_equal: {
+      return check_number_operand(expr.op, left) >=
+             check_number_operand(expr.op, right);
+    } break;
+    case TokenType::less: {
+      return check_number_operand(expr.op, left) <
+             check_number_operand(expr.op, right);
+    } break;
+    case TokenType::less_equal: {
+      return check_number_operand(expr.op, left) <=
+             check_number_operand(expr.op, right);
+    } break;
+    case TokenType::equal_equal: {
+      return left == right;
+    } break;
+    case TokenType::bang_equal: {
+      return left != right;
+    } break;
     default:
       return std::monostate{}; // Unreachable
     }
@@ -85,25 +120,6 @@ struct EvaluatorVisitor {
 
 LoxValue evaluate(const Expr &expr) {
   return std::visit(EvaluatorVisitor(), expr.node);
-}
-
-std::string to_string(const LoxValue &value) {
-  if (std::holds_alternative<std::monostate>(value))
-    return "nil";
-  if (std::holds_alternative<bool>(value))
-    return std::get<bool>(value) ? "true" : "false";
-  if (std::holds_alternative<std::string>(value))
-    return std::get<std::string>(value);
-  if (std::holds_alternative<double>(value)) {
-    double n = std::get<double>(value);
-    std::string text = std::to_string(n);
-    // Strip trailing zeros for clean output
-    text.erase(text.find_last_not_of('0') + 1, std::string::npos);
-    if (text.back() == '.')
-      text.pop_back();
-    return text;
-  }
-  return "unknown";
 }
 
 } // namespace evaluator
