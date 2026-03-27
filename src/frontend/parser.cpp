@@ -71,8 +71,7 @@ Expr Parser::parse_prefix() {
   }
 
   if (match({TokenType::left_paren})) {
-    Expr expr =
-        parse_expression(0); // Reset precedence to 0 for inner expressions
+    Expr expr = parse_expression(static_cast<int>(precedence::assignment));
     consume(TokenType::right_paren, "Expect ')' after expression.");
     return Expr(Grouping(std::make_unique<Expr>(std::move(expr))));
   }

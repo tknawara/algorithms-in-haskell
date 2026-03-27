@@ -9,7 +9,6 @@ struct AstVisitor {
 
   std::string operator()(const Binary &b) const {
     std::string op_str(ctx.get_lexeme(b.op.span));
-    // We can cleanly call the main print function recursively
     return "(" + op_str + " " + print(*b.left, ctx) + " " +
            print(*b.right, ctx) + ")";
   }
@@ -33,7 +32,6 @@ struct AstVisitor {
 
     if (std::holds_alternative<double>(l.value)) {
       double n = std::get<double>(l.value);
-      // Format CodeCrafters specific decimals
       if (n == static_cast<long long>(n))
         return std::to_string(static_cast<long long>(n)) + ".0";
       std::string str = std::to_string(n);

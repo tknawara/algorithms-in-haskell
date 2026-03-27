@@ -5,8 +5,11 @@
             "name": "Debug Kafka Broker",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/kafka", // Change this to your binary name
-            "args": [],
+            "program": "${workspaceFolder}/build/interpreter", // Change this to your binary name
+            "args": [
+                "parse",
+                "test.lox"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
