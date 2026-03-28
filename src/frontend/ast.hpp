@@ -3,8 +3,15 @@
 #include "frontend/lexer.hpp"
 #include <memory>
 #include <variant>
+#include <vector>
 
+// Forward declarations
 struct Expr;
+struct Stmt;
+
+// ============================================================================
+// Expression Types
+// ============================================================================
 
 struct Binary {
   std::unique_ptr<Expr> left;
@@ -56,3 +63,34 @@ struct Expr {
   Expr(Expr &&) = default;
   Expr &operator=(Expr &&) = default;
 };
+
+// Expression statement: an expression followed by a semicolon
+struct ExpressionStmt {
+  std::unique_ptr<Expr> expression;
+
+  explicit ExpressionStmt(std::unique_ptr<Expr> expr);
+  ~ExpressionStmt();
+
+  ExpressionStmt(ExpressionStmt &&) = default;
+  ExpressionStmt &operator=(ExpressionStmt &&) = default;
+};
+
+struct PrintStmt {
+  std::unique_ptr<Expr> expression;
+
+  explicit PrintStmt(std::unique_ptr<Expr> expr);
+  ~PrintStmt();
+
+  PrintStmt(PrintStmt &&) = default;
+  PrintStmt &operator=(PrintStmt &&) = default;
+};
+
+struct Stmt {
+  std::variant<ExpressionStmt, PrintStmt> node;
+
+  template <typename T> Stmt(T &&n) : node(std::forward<T>(n)) {}
+  Stmt(Stmt &&) = default;
+  Stmt &operator=(Stmt &&) = default;
+};
+
+using Program = std::vector<Stmt>;

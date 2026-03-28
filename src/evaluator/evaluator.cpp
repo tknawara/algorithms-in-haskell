@@ -1,5 +1,7 @@
 #include "evaluator/evaluator.hpp"
 
+#include <iostream>
+
 namespace evaluator {
 
 bool is_truthy(const LoxValue &value) {
@@ -120,6 +122,53 @@ struct EvaluatorVisitor {
 
 LoxValue evaluate(const Expr &expr) {
   return std::visit(EvaluatorVisitor(), expr.node);
+}
+
+// Helper to format a value for printing (without quotes for strings)
+std::string stringify(const LoxValue &value) {
+  if (std::holds_alternative<std::monostate>(value)) {
+    return "nil";
+  }
+  if (std::holds_alternative<bool>(value)) {
+    return std::get<bool>(value) ? "true" : "false";
+  }
+  if (std::holds_alternative<double>(value)) {
+    // Format double without unnecessary decimals
+    std::string result = std::to_string(std::get<double>(value));
+    // Remove trailing zeros
+    while (result.size() > 0 && result[result.size() - 1] == '0') {
+      result.pop_back();
+    }
+    // Remove trailing decimal point if present
+    if (result.size() > 0 && result[result.size() - 1] == '.') {
+      result.pop_back();
+    }
+    return result;
+  }
+  if (std::holds_alternative<std::string>(value)) {
+    return std::get<std::string>(value);
+  }
+  return "unknown";
+}
+
+struct StatementExecutor {
+  void operator()(const ExpressionStmt &stmt) const {
+    // Evaluate the expression and discard the result
+    evaluate(*stmt.expression);
+  }
+
+  void operator()(const PrintStmt &stmt) const {
+    LoxValue value = evaluate(*stmt.expression);
+    std::cout << stringify(value) << "\n";
+  }
+};
+
+void execute(const Stmt &stmt) { std::visit(StatementExecutor(), stmt.node); }
+
+void execute_program(const Program &program) {
+  for (const auto &stmt : program) {
+    execute(stmt);
+  }
 }
 
 } // namespace evaluator

@@ -33,7 +33,15 @@ int main(int argc, char *argv[]) {
   pipeline.lex();
 
   if (need_parse) {
-    pipeline.parse();
+    // Use the appropriate parsing method based on the command
+    if (command == "evaluate") {
+      pipeline.parse_expression();
+    } else if (command == "run") {
+      pipeline.parse_program();
+    } else {
+      // For parse command, we still use expression parsing for backward compatibility
+      pipeline.parse_expression();
+    }
   }
 
   // Dispatch to command handler

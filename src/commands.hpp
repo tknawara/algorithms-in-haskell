@@ -14,13 +14,21 @@
 struct Pipeline {
   SourceContext &ctx;
   std::vector<Token> tokens;
-  Expr ast{Literal(std::monostate{})};
+  
+  // For expression-only parsing (evaluate command)
+  Expr expr_ast{Literal(std::monostate{})};
+  
+  // For statement parsing (run command)
+  Program program;
 
   explicit Pipeline(SourceContext &context);
 
   bool lex();
-  bool parse();
+  bool parse_expression();  // Parse a single expression (for evaluate command)
+  bool parse_program();     // Parse a full program with statements (for run command)
+  
   std::pair<LoxValue, bool> eval();
+  bool run();               // Execute statements
 };
 
 using CommandFunc = std::function<int(Pipeline &, SourceContext &)>;
@@ -28,6 +36,7 @@ using CommandFunc = std::function<int(Pipeline &, SourceContext &)>;
 int cmd_tokenize(Pipeline &p, SourceContext &ctx);
 int cmd_parse(Pipeline &p, SourceContext &ctx);
 int cmd_evaluate(Pipeline &p, SourceContext &ctx);
+int cmd_run(Pipeline &p, SourceContext &ctx);
 
 struct CommandRegistry {
   std::unordered_map<std::string, CommandFunc> commands;

@@ -4,7 +4,8 @@
 Parser::Parser(const std::vector<Token> &tokens, const SourceContext &context)
     : tokens(tokens), ctx(context) {}
 
-Expr Parser::parse() {
+// Parse a single expression (for backward compatibility with evaluate command)
+Expr Parser::parse_expression_only() {
   try {
     return parse_expression();
   } catch (const ParseError &error) {
@@ -13,6 +14,46 @@ Expr Parser::parse() {
     // will halt later.
     return Expr(Literal(std::monostate{}));
   }
+}
+
+// Parse a full program (list of statements)
+Program Parser::parse() {
+  Program program;
+  
+  try {
+    while (!is_at_end()) {
+      program.push_back(parse_statement());
+    }
+  } catch (const ParseError &error) {
+    // Error already reported, return what we have
+    synchronize();
+  }
+  
+  return program;
+}
+
+// ============================================================================
+// Statement Parsing
+// ============================================================================
+
+Stmt Parser::parse_statement() {
+  if (match({TokenType::print_token})) {
+    return parse_print_statement();
+  }
+  
+  return parse_expression_statement();
+}
+
+Stmt Parser::parse_print_statement() {
+  Expr value = parse_expression();
+  consume(TokenType::semicolon, "Expect ';' after value.");
+  return Stmt(PrintStmt(std::make_unique<Expr>(std::move(value))));
+}
+
+Stmt Parser::parse_expression_statement() {
+  Expr value = parse_expression();
+  consume(TokenType::semicolon, "Expect ';' after expression.");
+  return Stmt(ExpressionStmt(std::make_unique<Expr>(std::move(value))));
 }
 
 // --- Precedence Climbing Core ---
@@ -47,7 +88,10 @@ int Parser::get_precedence(TokenType type) const {
 Expr Parser::parse_expression(int min_precedence) {
   Expr lhs = parse_prefix();
 
-  while (!is_at_end() && get_precedence(peek().type) >= min_precedence) {
+  // Keep consuming operators while they have higher precedence than the minimum.
+  // We require strictly greater precedence to avoid consuming tokens like ';'
+  // which have precedence::none (0) when min_precedence is also 0.
+  while (!is_at_end() && get_precedence(peek().type) > min_precedence) {
     Token op = advance();
     int op_precedence = get_precedence(op.type);
 

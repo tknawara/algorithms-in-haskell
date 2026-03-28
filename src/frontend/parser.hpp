@@ -34,9 +34,15 @@ private:
 
 public:
   Parser(const std::vector<Token> &tokens, const SourceContext &context);
-  Expr parse();
+
+  Expr parse_expression_only();
+  Program parse();
 
 private:
+  Stmt parse_statement();
+  Stmt parse_print_statement();
+  Stmt parse_expression_statement();
+
   Expr parse_expression(int min_precedence = 0);
   Expr parse_prefix();
   int get_precedence(TokenType type) const;

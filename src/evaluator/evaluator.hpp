@@ -18,5 +18,14 @@ public:
 class SourceContext;
 
 namespace evaluator {
+
+// Evaluate an expression and return its value
 LoxValue evaluate(const Expr &expr);
+
+// Execute a statement
+void execute(const Stmt &stmt);
+
+// Execute a program (list of statements)
+void execute_program(const Program &program);
+
 } // namespace evaluator
