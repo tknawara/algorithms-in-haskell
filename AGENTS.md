@@ -55,6 +55,7 @@ src/
 - `Binary` - infix operators (`+`, `-`, `*`, `/`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `and`, `or`)
 - `Grouping` - parenthesized expressions
 - `Variable` - variable reference (by name)
+- `Assign` - assignment expression (`a = b = 1`)
 
 **Statements:**
 - `ExpressionStmt` - expression followed by semicolon (result discarded)
@@ -200,12 +201,19 @@ ErrorReporter::report_token(token, message, ctx);
 - `VarDeclaration` AST node stores: `name` (string) + `name_token` + `initializer`
 - Identifier tokens themselves don't store the name in the literal field
 
+**Variable Assignment:**
+- Assignment is an expression: `a = 1` returns 1
+- Chained assignment: `a = b = 1` means `a = (b = 1)`
+- Right-associative parsing with precedence climbing
+- `Assign` AST node stores: name, name_token, value expression
+- Evaluator assigns to environment and returns the value
+- Invalid assignment target (e.g., `1 = 2`) throws parse error
+
 **Variable Lookup:**
 - Evaluator looks up the name string in the Environment
 - RuntimeError thrown with token info if undefined
 
 **Future Extensions:**
-- Assignment statements (`x = 5;`)
 - Block scopes
 - Function scopes with closures
 

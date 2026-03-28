@@ -20,6 +20,10 @@ Grouping::~Grouping() = default;
 Variable::Variable(std::string n, Token t) : name(std::move(n)), name_token(t) {}
 Variable::~Variable() = default;
 
+Assign::Assign(std::string n, Token t, std::unique_ptr<Expr> v)
+    : name(std::move(n)), name_token(t), value(std::move(v)) {}
+Assign::~Assign() = default;
+
 // ============================================================================
 // Statement Type Implementations
 // ============================================================================

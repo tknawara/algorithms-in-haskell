@@ -69,8 +69,22 @@ struct Variable {
   Variable &operator=(Variable &&) = default;
 };
 
+// Assignment expression: target = value
+// Example: a = 1, or a = b = 1 (right-associative)
+struct Assign {
+  std::string name;
+  Token name_token;  // For error reporting
+  std::unique_ptr<Expr> value;
+
+  Assign(std::string n, Token t, std::unique_ptr<Expr> v);
+  ~Assign();
+
+  Assign(Assign &&) = default;
+  Assign &operator=(Assign &&) = default;
+};
+
 struct Expr {
-  std::variant<Binary, Unary, Literal, Grouping, Variable> node;
+  std::variant<Binary, Unary, Literal, Grouping, Variable, Assign> node;
 
   template <typename T> Expr(T &&n) : node(std::forward<T>(n)) {}
   Expr(Expr &&) = default;

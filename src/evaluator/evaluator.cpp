@@ -131,6 +131,12 @@ struct EvaluatorVisitor {
     // We return nil here, but the actual lookup happens in evaluate()
     return std::monostate{};
   }
+
+  LoxValue operator()(const Assign &expr) const {
+    // This should not be called directly - evaluate() handles Assign specially
+    // The actual assignment happens in evaluate()
+    return std::monostate{};
+  }
 };
 
 LoxValue evaluate(const Expr &expr, Environment &env) {
@@ -144,6 +150,22 @@ LoxValue evaluate(const Expr &expr, Environment &env) {
       throw RuntimeError(var.name_token, error.what());
     }
   }
+  
+  // Handle Assign specially
+  if (std::holds_alternative<Assign>(expr.node)) {
+    const auto &assign = std::get<Assign>(expr.node);
+    // First evaluate the value
+    LoxValue value = evaluate(*assign.value, env);
+    // Then assign it
+    try {
+      env.assign(assign.name, value);
+      return value;
+    } catch (const EnvironmentError &error) {
+      // Re-throw as RuntimeError with proper token for line reporting
+      throw RuntimeError(assign.name_token, error.what());
+    }
+  }
+  
   return std::visit(EvaluatorVisitor(env), expr.node);
 }
 

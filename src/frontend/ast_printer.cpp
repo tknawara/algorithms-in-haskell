@@ -46,6 +46,10 @@ struct AstVisitor {
   std::string operator()(const Variable &v) const {
     return v.name;
   }
+
+  std::string operator()(const Assign &a) const {
+    return "(= " + a.name + " " + print(*a.value, ctx) + ")";
+  }
 };
 
 std::string print(const Expr &expr, const SourceContext &ctx) {

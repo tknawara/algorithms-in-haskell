@@ -58,14 +58,15 @@ Stmt Parser::parse_print_statement() {
 Stmt Parser::parse_var_declaration_statement() {
   Token name_token = consume(TokenType::identifier, "Expect variable name.");
   std::string name = std::string(name_token.get_lexeme(ctx));
-  
+
   std::optional<std::unique_ptr<Expr>> initializer = std::nullopt;
   if (match({TokenType::equal})) {
     initializer = std::make_unique<Expr>(parse_expression());
   }
-  
+
   consume(TokenType::semicolon, "Expect ';' after variable declaration.");
-  return Stmt(VarDeclaration(std::move(name), name_token, std::move(initializer)));
+  return Stmt(
+      VarDeclaration(std::move(name), name_token, std::move(initializer)));
 }
 
 Stmt Parser::parse_expression_statement() {
@@ -106,20 +107,39 @@ int Parser::get_precedence(TokenType type) const {
 Expr Parser::parse_expression(int min_precedence) {
   Expr lhs = parse_prefix();
 
-  // Keep consuming operators while they have higher precedence than the
-  // minimum. We require strictly greater precedence to avoid consuming tokens
-  // like ';' which have precedence::none (0) when min_precedence is also 0.
-  while (!is_at_end() && get_precedence(peek().type) > min_precedence) {
+  // Keep consuming operators while they have precedence >= the minimum.
+  // We use >= to handle right-associative operators like assignment correctly.
+  // Assignment: a = b = c should parse as a = (b = c), not (a = b) = c
+  // We also require precedence > 0 to skip non-operators like semicolon.
+  while (!is_at_end()) {
+    int precedence = get_precedence(peek().type);
+    if (precedence < min_precedence || precedence == 0) {
+      break;
+    }
     Token op = advance();
     int op_precedence = get_precedence(op.type);
 
-    int next_min_precedence =
-        (op.type == TokenType::equal) ? op_precedence : op_precedence + 1;
+    // Handle assignment specially - it must target a variable
+    if (op.type == TokenType::equal) {
+      // Check that LHS is a valid assignment target
+      if (!std::holds_alternative<Variable>(lhs.node)) {
+        throw error(op, "Invalid assignment target.");
+      }
 
-    Expr rhs = parse_expression(next_min_precedence);
+      // Assignment is right-associative: a = b = c means a = (b = c)
+      // Use precedence (not precedence + 1) for right-associativity
+      Expr rhs = parse_expression(op_precedence);
 
-    lhs = Expr(Binary(std::make_unique<Expr>(std::move(lhs)), op,
-                      std::make_unique<Expr>(std::move(rhs))));
+      // Extract the variable info from lhs
+      auto &var = std::get<Variable>(lhs.node);
+      lhs = Expr(Assign(var.name, var.name_token,
+                        std::make_unique<Expr>(std::move(rhs))));
+    } else {
+      int next_min_precedence = op_precedence + 1;
+      Expr rhs = parse_expression(next_min_precedence);
+      lhs = Expr(Binary(std::make_unique<Expr>(std::move(lhs)), op,
+                        std::make_unique<Expr>(std::move(rhs))));
+    }
   }
 
   return lhs;
