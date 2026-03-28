@@ -42,6 +42,10 @@ struct AstVisitor {
     }
     return "unknown";
   }
+
+  std::string operator()(const Variable &v) const {
+    return v.name;
+  }
 };
 
 std::string print(const Expr &expr, const SourceContext &ctx) {

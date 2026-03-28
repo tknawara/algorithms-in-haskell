@@ -4,6 +4,7 @@
 
 #include "core/error_reporter.hpp"
 #include "core/format.hpp"
+#include "evaluator/environment.hpp"
 #include "evaluator/evaluator.hpp"
 #include "frontend/ast_printer.hpp"
 #include "frontend/lexer.hpp"
@@ -33,7 +34,7 @@ bool Pipeline::parse_program() {
 
 std::pair<LoxValue, bool> Pipeline::eval() {
   try {
-    LoxValue result = evaluator::evaluate(expr_ast);
+    LoxValue result = evaluator::evaluate(expr_ast, env);
     return {result, true};
   } catch (const RuntimeError &error) {
     ErrorReporter::report_general(error.token.line, error.what());
@@ -44,10 +45,13 @@ std::pair<LoxValue, bool> Pipeline::eval() {
 // Execute statements
 bool Pipeline::run() {
   try {
-    evaluator::execute_program(program);
+    evaluator::execute_program(program, env);
     return true;
   } catch (const RuntimeError &error) {
     ErrorReporter::report_general(error.token.line, error.what());
+    return false;
+  } catch (const EnvironmentError &error) {
+    ErrorReporter::report_general(0, error.what());
     return false;
   }
 }

@@ -54,10 +54,12 @@ src/
 - `Unary` - prefix operators (`!`, `-`)
 - `Binary` - infix operators (`+`, `-`, `*`, `/`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `and`, `or`)
 - `Grouping` - parenthesized expressions
+- `Variable` - variable reference (by name)
 
 **Statements:**
 - `ExpressionStmt` - expression followed by semicolon (result discarded)
 - `PrintStmt` - `print` keyword + expression + semicolon
+- `VarDeclaration` - `var` + identifier + optional initializer + semicolon
 - `Program` - `std::vector<Stmt>` representing a full program
 
 ### 3. Parser (`frontend/parser.cpp`)
@@ -74,17 +76,27 @@ src/
 - `parse_print_statement()` - handles `print <expr>;`
 - `parse_expression_statement()` - handles `<expr>;`
 
-### 4. Evaluator (`evaluator/evaluator.cpp`)
+### 4. Environment (`evaluator/environment.hpp`)
+
+Stores variable bindings during execution:
+- `define(name, value)` - creates/updates a variable
+- `get(name)` - retrieves a variable value (throws EnvironmentError if undefined)
+- `assign(name, value)` - updates an existing variable
+- Currently single global scope (nested scopes to be added later)
+
+### 5. Evaluator (`evaluator/evaluator.cpp`)
 
 **Expression Evaluation:**
-- `evaluate(const Expr&)` - evaluates expressions and returns `LoxValue`
+- `evaluate(const Expr&, Environment&)` - evaluates expressions and returns `LoxValue`
 - `LoxValue` = `std::variant<std::monostate, double, std::string, bool>`
 - Truthiness: `nil` and `false` are falsy, everything else is truthy
 - Operators: standard arithmetic, comparison, logical (`and`/`or` with short-circuiting)
+- Variable lookup: looks up name in environment
 
 **Statement Execution:**
-- `execute(const Stmt&)` - executes a single statement
-- `execute_program(const Program&)` - executes a list of statements
+- `execute(const Stmt&, Environment&)` - executes a single statement
+- `execute_program(const Program&, Environment&)` - executes a list of statements
+- `VarDeclaration` - defines variable in environment (nil if no initializer)
 - `stringify()` - formats values for printing (no quotes on strings)
 
 ### 5. Commands (`commands.cpp`)
@@ -111,16 +123,22 @@ src/
 
 Input (`program.lox`):
 ```lox
-print 1 + 2;
-print "hello";
-print true;
+var x = 5;
+var y = 10;
+print x + y;
+
+var msg = "hello";
+print msg;
+
+var z;
+print z;  // nil
 ```
 
 Output:
 ```
-3
+15
 hello
-true
+nil
 ```
 
 ### Evaluate mode (single expression)
@@ -152,6 +170,27 @@ To add a new statement (e.g., `if` statement):
 6. **Evaluator** (`evaluator.cpp`): 
    - Add case to `StatementExecutor` visitor
    - Implement the execution logic
+
+## Variable Implementation Details
+
+**Variable Declaration:**
+- `var x = 5;` - declares with initializer
+- `var y;` - declares without initializer (nil)
+
+**Variable Name Storage:**
+- Parser extracts variable names using `ctx.get_lexeme(token.span)` from the source
+- `Variable` AST node stores: `name` (string) + `name_token` (for error line numbers)
+- `VarDeclaration` AST node stores: `name` (string) + `name_token` + `initializer`
+- Identifier tokens themselves don't store the name in the literal field
+
+**Variable Lookup:**
+- Evaluator looks up the name string in the Environment
+- RuntimeError thrown with token info if undefined
+
+**Future Extensions:**
+- Assignment statements (`x = 5;`)
+- Block scopes
+- Function scopes with closures
 
 ## Common Gotchas
 

@@ -17,6 +17,9 @@ Literal::~Literal() = default;
 Grouping::Grouping(std::unique_ptr<Expr> expr) : expression(std::move(expr)) {}
 Grouping::~Grouping() = default;
 
+Variable::Variable(std::string n, Token t) : name(std::move(n)), name_token(t) {}
+Variable::~Variable() = default;
+
 // ============================================================================
 // Statement Type Implementations
 // ============================================================================
@@ -28,3 +31,8 @@ ExpressionStmt::~ExpressionStmt() = default;
 PrintStmt::PrintStmt(std::unique_ptr<Expr> expr)
     : expression(std::move(expr)) {}
 PrintStmt::~PrintStmt() = default;
+
+VarDeclaration::VarDeclaration(std::string name, Token t,
+                               std::optional<std::unique_ptr<Expr>> init)
+    : name(std::move(name)), name_token(t), initializer(std::move(init)) {}
+VarDeclaration::~VarDeclaration() = default;

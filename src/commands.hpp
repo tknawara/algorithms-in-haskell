@@ -20,6 +20,9 @@ struct Pipeline {
   
   // For statement parsing (run command)
   Program program;
+  
+  // Environment for variable storage (shared across program execution)
+  Environment env;
 
   explicit Pipeline(SourceContext &context);
 

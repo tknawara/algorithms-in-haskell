@@ -41,6 +41,7 @@ public:
 private:
   Stmt parse_statement();
   Stmt parse_print_statement();
+  Stmt parse_var_declaration_statement();
   Stmt parse_expression_statement();
 
   Expr parse_expression(int min_precedence = 0);

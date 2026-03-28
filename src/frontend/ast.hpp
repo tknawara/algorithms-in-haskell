@@ -2,6 +2,7 @@
 
 #include "frontend/lexer.hpp"
 #include <memory>
+#include <optional>
 #include <variant>
 #include <vector>
 
@@ -56,8 +57,20 @@ struct Grouping {
   Grouping &operator=(Grouping &&) = default;
 };
 
+// Variable reference expression: stores name and token for error reporting
+struct Variable {
+  std::string name;
+  Token name_token;  // For error reporting (line number)
+
+  Variable(std::string n, Token t);
+  ~Variable();
+
+  Variable(Variable &&) = default;
+  Variable &operator=(Variable &&) = default;
+};
+
 struct Expr {
-  std::variant<Binary, Unary, Literal, Grouping> node;
+  std::variant<Binary, Unary, Literal, Grouping, Variable> node;
 
   template <typename T> Expr(T &&n) : node(std::forward<T>(n)) {}
   Expr(Expr &&) = default;
@@ -85,8 +98,20 @@ struct PrintStmt {
   PrintStmt &operator=(PrintStmt &&) = default;
 };
 
+struct VarDeclaration {
+  std::string name;
+  Token name_token;  // For error reporting
+  std::optional<std::unique_ptr<Expr>> initializer;
+
+  VarDeclaration(std::string name, Token t, std::optional<std::unique_ptr<Expr>> init);
+  ~VarDeclaration();
+
+  VarDeclaration(VarDeclaration &&) = default;
+  VarDeclaration &operator=(VarDeclaration &&) = default;
+};
+
 struct Stmt {
-  std::variant<ExpressionStmt, PrintStmt> node;
+  std::variant<ExpressionStmt, PrintStmt, VarDeclaration> node;
 
   template <typename T> Stmt(T &&n) : node(std::forward<T>(n)) {}
   Stmt(Stmt &&) = default;

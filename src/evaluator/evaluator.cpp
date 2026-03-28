@@ -21,16 +21,23 @@ double check_number_operand(const Token &op, const LoxValue &operand) {
   throw RuntimeError(op, "Operand must be a number.");
 }
 
+// ============================================================================
+// Expression Evaluation
+// ============================================================================
+
 struct EvaluatorVisitor {
+  Environment &env;
+
+  explicit EvaluatorVisitor(Environment &environment) : env(environment) {}
 
   LoxValue operator()(const Literal &expr) const { return expr.value; }
 
   LoxValue operator()(const Grouping &expr) const {
-    return evaluate(*expr.expression);
+    return evaluate(*expr.expression, env);
   }
 
   LoxValue operator()(const Unary &expr) const {
-    LoxValue right = evaluate(*expr.right);
+    LoxValue right = evaluate(*expr.right, env);
 
     switch (expr.op.type) {
     case TokenType::bang:
@@ -43,24 +50,24 @@ struct EvaluatorVisitor {
   }
 
   LoxValue operator()(const Binary &expr) const {
-    LoxValue left = evaluate(*expr.left);
+    LoxValue left = evaluate(*expr.left, env);
 
     switch (expr.op.type) {
     case TokenType::and_token: {
       if (!is_truthy(left))
         return left;
-      return evaluate(*expr.right);
+      return evaluate(*expr.right, env);
     } break;
     case TokenType::or_token: {
       if (is_truthy(left))
         return left;
-      return evaluate(*expr.right);
+      return evaluate(*expr.right, env);
     } break;
     default:
       break; // Fall through to normal evaluation
     }
 
-    LoxValue right = evaluate(*expr.right);
+    LoxValue right = evaluate(*expr.right, env);
 
     switch (expr.op.type) {
     case TokenType::minus: {
@@ -118,11 +125,37 @@ struct EvaluatorVisitor {
       return std::monostate{}; // Unreachable
     }
   }
+
+  LoxValue operator()(const Variable &expr) const {
+    // This should not be called directly - evaluate() handles Variable specially
+    // We return nil here, but the actual lookup happens in evaluate()
+    return std::monostate{};
+  }
 };
 
-LoxValue evaluate(const Expr &expr) {
-  return std::visit(EvaluatorVisitor(), expr.node);
+LoxValue evaluate(const Expr &expr, Environment &env) {
+  // Handle Variable specially
+  if (std::holds_alternative<Variable>(expr.node)) {
+    const auto &var = std::get<Variable>(expr.node);
+    try {
+      return env.get(var.name);
+    } catch (const EnvironmentError &error) {
+      // Re-throw as RuntimeError with proper token for line reporting
+      throw RuntimeError(var.name_token, error.what());
+    }
+  }
+  return std::visit(EvaluatorVisitor(env), expr.node);
 }
+
+// Convenience overload for backward compatibility (creates temporary environment)
+LoxValue evaluate(const Expr &expr) {
+  Environment env;
+  return evaluate(expr, env);
+}
+
+// ============================================================================
+// Statement Execution
+// ============================================================================
 
 // Helper to format a value for printing (without quotes for strings)
 std::string stringify(const LoxValue &value) {
@@ -152,23 +185,43 @@ std::string stringify(const LoxValue &value) {
 }
 
 struct StatementExecutor {
+  Environment &env;
+
+  explicit StatementExecutor(Environment &environment) : env(environment) {}
+
   void operator()(const ExpressionStmt &stmt) const {
     // Evaluate the expression and discard the result
-    evaluate(*stmt.expression);
+    evaluate(*stmt.expression, env);
   }
 
   void operator()(const PrintStmt &stmt) const {
-    LoxValue value = evaluate(*stmt.expression);
+    LoxValue value = evaluate(*stmt.expression, env);
     std::cout << stringify(value) << "\n";
+  }
+
+  void operator()(const VarDeclaration &stmt) const {
+    LoxValue value = std::monostate{}; // nil by default
+    if (stmt.initializer.has_value()) {
+      value = evaluate(*stmt.initializer.value(), env);
+    }
+    env.define(stmt.name, value);
   }
 };
 
-void execute(const Stmt &stmt) { std::visit(StatementExecutor(), stmt.node); }
+void execute(const Stmt &stmt, Environment &env) {
+  std::visit(StatementExecutor(env), stmt.node);
+}
 
-void execute_program(const Program &program) {
+void execute_program(const Program &program, Environment &env) {
   for (const auto &stmt : program) {
-    execute(stmt);
+    execute(stmt, env);
   }
+}
+
+// Convenience function that creates its own environment
+void execute_program(const Program &program) {
+  Environment env;
+  execute_program(program, env);
 }
 
 } // namespace evaluator
