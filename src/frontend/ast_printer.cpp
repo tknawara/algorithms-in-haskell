@@ -44,11 +44,12 @@ struct AstVisitor {
   }
 
   std::string operator()(const Variable &v) const {
-    return v.name;
+    return std::string(v.name_token.get_lexeme(ctx));
   }
 
   std::string operator()(const Assign &a) const {
-    return "(= " + a.name + " " + print(*a.value, ctx) + ")";
+    std::string name = std::string(a.name_token.get_lexeme(ctx));
+    return "(= " + name + " " + print(*a.value, ctx) + ")";
   }
 };
 

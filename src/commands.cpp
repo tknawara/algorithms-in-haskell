@@ -34,7 +34,7 @@ bool Pipeline::parse_program() {
 
 std::pair<LoxValue, bool> Pipeline::eval() {
   try {
-    LoxValue result = evaluator::evaluate(expr_ast, env);
+    LoxValue result = evaluator::evaluate(expr_ast, env, ctx);
     return {result, true};
   } catch (const RuntimeError &error) {
     ErrorReporter::report_general(error.token.line, error.what());
@@ -45,7 +45,7 @@ std::pair<LoxValue, bool> Pipeline::eval() {
 // Execute statements
 bool Pipeline::run() {
   try {
-    evaluator::execute_program(program, env);
+    evaluator::execute_program(program, env, ctx);
     return true;
   } catch (const RuntimeError &error) {
     ErrorReporter::report_general(error.token.line, error.what());

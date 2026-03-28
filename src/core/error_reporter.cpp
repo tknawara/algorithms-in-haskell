@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <iostream>
 
-#include "core/source_manager.hpp"
+#include "core/source_context.hpp"
 #include "core/span.hpp"
 #include "frontend/lexer.hpp"
 

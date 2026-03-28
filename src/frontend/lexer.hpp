@@ -5,7 +5,7 @@
 #include <variant>
 #include <vector>
 
-#include "core/source_manager.hpp"
+#include "core/source_context.hpp"
 #include "core/span.hpp"
 
 enum class TokenType {

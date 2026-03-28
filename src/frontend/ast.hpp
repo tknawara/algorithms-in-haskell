@@ -57,12 +57,11 @@ struct Grouping {
   Grouping &operator=(Grouping &&) = default;
 };
 
-// Variable reference expression: stores name and token for error reporting
+// Variable reference expression: just the token, name extracted from source during eval
 struct Variable {
-  std::string name;
-  Token name_token;  // For error reporting (line number)
+  Token name_token;
 
-  Variable(std::string n, Token t);
+  explicit Variable(Token t);
   ~Variable();
 
   Variable(Variable &&) = default;
@@ -72,11 +71,10 @@ struct Variable {
 // Assignment expression: target = value
 // Example: a = 1, or a = b = 1 (right-associative)
 struct Assign {
-  std::string name;
-  Token name_token;  // For error reporting
+  Token name_token;
   std::unique_ptr<Expr> value;
 
-  Assign(std::string n, Token t, std::unique_ptr<Expr> v);
+  Assign(Token t, std::unique_ptr<Expr> v);
   ~Assign();
 
   Assign(Assign &&) = default;
@@ -113,11 +111,10 @@ struct PrintStmt {
 };
 
 struct VarDeclaration {
-  std::string name;
-  Token name_token;  // For error reporting
+  Token name_token;
   std::optional<std::unique_ptr<Expr>> initializer;
 
-  VarDeclaration(std::string name, Token t, std::optional<std::unique_ptr<Expr>> init);
+  VarDeclaration(Token t, std::optional<std::unique_ptr<Expr>> init);
   ~VarDeclaration();
 
   VarDeclaration(VarDeclaration &&) = default;

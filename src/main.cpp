@@ -3,7 +3,7 @@
 
 #include "commands.hpp"
 #include "core/file_io.hpp"
-#include "core/source_manager.hpp"
+#include "core/source_context.hpp"
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
@@ -39,7 +39,8 @@ int main(int argc, char *argv[]) {
     } else if (command == "run") {
       pipeline.parse_program();
     } else {
-      // For parse command, we still use expression parsing for backward compatibility
+      // For parse command, we still use expression parsing for backward
+      // compatibility
       pipeline.parse_expression();
     }
   }

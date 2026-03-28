@@ -29,7 +29,7 @@ src/
 │   ├── error_reporter    # Error reporting system
 │   ├── file_io           # File reading utilities
 │   ├── format            # Value formatting for output
-│   ├── source_manager    # Source code management
+│   ├── source_context    # Source code management
 │   └── span              # Source location tracking
 ├── frontend/             # Frontend (lexer + parser + AST)
 │   ├── lexer.cpp/hpp     # Tokenizer
@@ -54,8 +54,8 @@ src/
 - `Unary` - prefix operators (`!`, `-`)
 - `Binary` - infix operators (`+`, `-`, `*`, `/`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `and`, `or`)
 - `Grouping` - parenthesized expressions
-- `Variable` - variable reference (by name)
-- `Assign` - assignment expression (`a = b = 1`)
+- `Variable` - variable reference (stores token, name extracted from source during eval)
+- `Assign` - assignment expression (stores token, name extracted from source)
 
 **Statements:**
 - `ExpressionStmt` - expression followed by semicolon (result discarded)
@@ -196,10 +196,15 @@ ErrorReporter::report_token(token, message, ctx);
 - `var y;` - declares without initializer (nil)
 
 **Variable Name Storage:**
-- Parser extracts variable names using `token.get_lexeme(ctx)` from the source
-- `Variable` AST node stores: `name` (string) + `name_token` (for error line numbers)
-- `VarDeclaration` AST node stores: `name` (string) + `name_token` + `initializer`
-- Identifier tokens themselves don't store the name in the literal field
+- AST nodes store only `Token` (which contains Span for source location)
+- Evaluator extracts names on-demand using `token.get_lexeme(ctx)`
+- This keeps AST lightweight and maintains source location for error reporting
+- `Variable`, `Assign`, and `VarDeclaration` all use this pattern
+
+**Evaluator with SourceContext:**
+- `evaluate(expr, env, ctx)` now takes `SourceContext` to resolve names
+- `execute(stmt, env, ctx)` passes context through statement execution
+- Allows runtime errors to show source location and potentially source snippets
 
 **Variable Assignment:**
 - Assignment is an expression: `a = 1` returns 1

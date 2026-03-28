@@ -57,7 +57,6 @@ Stmt Parser::parse_print_statement() {
 
 Stmt Parser::parse_var_declaration_statement() {
   Token name_token = consume(TokenType::identifier, "Expect variable name.");
-  std::string name = std::string(name_token.get_lexeme(ctx));
 
   std::optional<std::unique_ptr<Expr>> initializer = std::nullopt;
   if (match({TokenType::equal})) {
@@ -65,8 +64,7 @@ Stmt Parser::parse_var_declaration_statement() {
   }
 
   consume(TokenType::semicolon, "Expect ';' after variable declaration.");
-  return Stmt(
-      VarDeclaration(std::move(name), name_token, std::move(initializer)));
+  return Stmt(VarDeclaration(name_token, std::move(initializer)));
 }
 
 Stmt Parser::parse_expression_statement() {
@@ -130,10 +128,9 @@ Expr Parser::parse_expression(int min_precedence) {
       // Use precedence (not precedence + 1) for right-associativity
       Expr rhs = parse_expression(op_precedence);
 
-      // Extract the variable info from lhs
+      // Extract the variable token from lhs
       auto &var = std::get<Variable>(lhs.node);
-      lhs = Expr(Assign(var.name, var.name_token,
-                        std::make_unique<Expr>(std::move(rhs))));
+      lhs = Expr(Assign(var.name_token, std::make_unique<Expr>(std::move(rhs))));
     } else {
       int next_min_precedence = op_precedence + 1;
       Expr rhs = parse_expression(next_min_precedence);
@@ -171,8 +168,7 @@ Expr Parser::parse_prefix() {
 
   if (match({TokenType::identifier})) {
     Token name_token = previous();
-    std::string name = std::string(name_token.get_lexeme(ctx));
-    return Expr(Variable(name, name_token));
+    return Expr(Variable(name_token));
   }
 
   // If we don't match any valid prefix, the syntax is garbage

@@ -18,21 +18,23 @@ public:
 
 class SourceContext;
 
+class SourceContext;
+
 namespace evaluator {
 
 // Evaluate an expression and return its value
-LoxValue evaluate(const Expr &expr, Environment &env);
+LoxValue evaluate(const Expr &expr, Environment &env, const SourceContext &ctx);
 
 // Convenience function that creates a temporary environment
-LoxValue evaluate(const Expr &expr);
+LoxValue evaluate(const Expr &expr, const SourceContext &ctx);
 
 // Execute a statement
-void execute(const Stmt &stmt, Environment &env);
+void execute(const Stmt &stmt, Environment &env, const SourceContext &ctx);
 
 // Execute a program (list of statements)
-void execute_program(const Program &program, Environment &env);
+void execute_program(const Program &program, Environment &env, const SourceContext &ctx);
 
 // Convenience function that creates an environment
-void execute_program(const Program &program);
+void execute_program(const Program &program, const SourceContext &ctx);
 
 } // namespace evaluator

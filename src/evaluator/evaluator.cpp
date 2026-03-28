@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "core/source_context.hpp"
+
 namespace evaluator {
 
 bool is_truthy(const LoxValue &value) {
@@ -27,17 +29,19 @@ double check_number_operand(const Token &op, const LoxValue &operand) {
 
 struct EvaluatorVisitor {
   Environment &env;
+  const SourceContext &ctx;
 
-  explicit EvaluatorVisitor(Environment &environment) : env(environment) {}
+  EvaluatorVisitor(Environment &environment, const SourceContext &context)
+      : env(environment), ctx(context) {}
 
   LoxValue operator()(const Literal &expr) const { return expr.value; }
 
   LoxValue operator()(const Grouping &expr) const {
-    return evaluate(*expr.expression, env);
+    return evaluate(*expr.expression, env, ctx);
   }
 
   LoxValue operator()(const Unary &expr) const {
-    LoxValue right = evaluate(*expr.right, env);
+    LoxValue right = evaluate(*expr.right, env, ctx);
 
     switch (expr.op.type) {
     case TokenType::bang:
@@ -50,24 +54,24 @@ struct EvaluatorVisitor {
   }
 
   LoxValue operator()(const Binary &expr) const {
-    LoxValue left = evaluate(*expr.left, env);
+    LoxValue left = evaluate(*expr.left, env, ctx);
 
     switch (expr.op.type) {
     case TokenType::and_token: {
       if (!is_truthy(left))
         return left;
-      return evaluate(*expr.right, env);
+      return evaluate(*expr.right, env, ctx);
     } break;
     case TokenType::or_token: {
       if (is_truthy(left))
         return left;
-      return evaluate(*expr.right, env);
+      return evaluate(*expr.right, env, ctx);
     } break;
     default:
       break; // Fall through to normal evaluation
     }
 
-    LoxValue right = evaluate(*expr.right, env);
+    LoxValue right = evaluate(*expr.right, env, ctx);
 
     switch (expr.op.type) {
     case TokenType::minus: {
@@ -127,52 +131,55 @@ struct EvaluatorVisitor {
   }
 
   LoxValue operator()(const Variable &expr) const {
-    // This should not be called directly - evaluate() handles Variable specially
-    // We return nil here, but the actual lookup happens in evaluate()
+    // This should not be called directly - evaluate() handles Variable
+    // specially
     return std::monostate{};
   }
 
   LoxValue operator()(const Assign &expr) const {
     // This should not be called directly - evaluate() handles Assign specially
-    // The actual assignment happens in evaluate()
     return std::monostate{};
   }
 };
 
-LoxValue evaluate(const Expr &expr, Environment &env) {
+LoxValue evaluate(const Expr &expr, Environment &env,
+                  const SourceContext &ctx) {
   // Handle Variable specially
   if (std::holds_alternative<Variable>(expr.node)) {
     const auto &var = std::get<Variable>(expr.node);
+    std::string name = std::string(var.name_token.get_lexeme(ctx));
     try {
-      return env.get(var.name);
+      return env.get(name);
     } catch (const EnvironmentError &error) {
       // Re-throw as RuntimeError with proper token for line reporting
       throw RuntimeError(var.name_token, error.what());
     }
   }
-  
+
   // Handle Assign specially
   if (std::holds_alternative<Assign>(expr.node)) {
     const auto &assign = std::get<Assign>(expr.node);
+    // Extract name from source
+    std::string name = std::string(assign.name_token.get_lexeme(ctx));
     // First evaluate the value
-    LoxValue value = evaluate(*assign.value, env);
+    LoxValue value = evaluate(*assign.value, env, ctx);
     // Then assign it
     try {
-      env.assign(assign.name, value);
+      env.assign(name, value);
       return value;
     } catch (const EnvironmentError &error) {
       // Re-throw as RuntimeError with proper token for line reporting
       throw RuntimeError(assign.name_token, error.what());
     }
   }
-  
-  return std::visit(EvaluatorVisitor(env), expr.node);
+
+  return std::visit(EvaluatorVisitor(env, ctx), expr.node);
 }
 
-// Convenience overload for backward compatibility (creates temporary environment)
-LoxValue evaluate(const Expr &expr) {
+// Convenience overload
+LoxValue evaluate(const Expr &expr, const SourceContext &ctx) {
   Environment env;
-  return evaluate(expr, env);
+  return evaluate(expr, env, ctx);
 }
 
 // ============================================================================
@@ -208,42 +215,46 @@ std::string stringify(const LoxValue &value) {
 
 struct StatementExecutor {
   Environment &env;
+  const SourceContext &ctx;
 
-  explicit StatementExecutor(Environment &environment) : env(environment) {}
+  StatementExecutor(Environment &environment, const SourceContext &context)
+      : env(environment), ctx(context) {}
 
   void operator()(const ExpressionStmt &stmt) const {
     // Evaluate the expression and discard the result
-    evaluate(*stmt.expression, env);
+    evaluate(*stmt.expression, env, ctx);
   }
 
   void operator()(const PrintStmt &stmt) const {
-    LoxValue value = evaluate(*stmt.expression, env);
+    LoxValue value = evaluate(*stmt.expression, env, ctx);
     std::cout << stringify(value) << "\n";
   }
 
   void operator()(const VarDeclaration &stmt) const {
     LoxValue value = std::monostate{}; // nil by default
     if (stmt.initializer.has_value()) {
-      value = evaluate(*stmt.initializer.value(), env);
+      value = evaluate(*stmt.initializer.value(), env, ctx);
     }
-    env.define(stmt.name, value);
+    std::string name = std::string(stmt.name_token.get_lexeme(ctx));
+    env.define(name, value);
   }
 };
 
-void execute(const Stmt &stmt, Environment &env) {
-  std::visit(StatementExecutor(env), stmt.node);
+void execute(const Stmt &stmt, Environment &env, const SourceContext &ctx) {
+  std::visit(StatementExecutor(env, ctx), stmt.node);
 }
 
-void execute_program(const Program &program, Environment &env) {
+void execute_program(const Program &program, Environment &env,
+                     const SourceContext &ctx) {
   for (const auto &stmt : program) {
-    execute(stmt, env);
+    execute(stmt, env, ctx);
   }
 }
 
-// Convenience function that creates its own environment
-void execute_program(const Program &program) {
+// Convenience function
+void execute_program(const Program &program, const SourceContext &ctx) {
   Environment env;
-  execute_program(program, env);
+  execute_program(program, env, ctx);
 }
 
 } // namespace evaluator

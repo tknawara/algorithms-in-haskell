@@ -3,7 +3,7 @@
 #include <regex>
 
 #include "core/error_reporter.hpp"
-#include "core/source_manager.hpp"
+#include "core/source_context.hpp"
 
 Lexer::Lexer(const SourceContext &context) : ctx(context) {}
 
