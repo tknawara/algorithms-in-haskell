@@ -5,6 +5,7 @@
 
 #include "core/source_manager.hpp"
 #include "core/span.hpp"
+#include "frontend/lexer.hpp"
 
 bool ErrorReporter::had_error = false;
 
@@ -60,4 +61,9 @@ void ErrorReporter::report_general(int line, const std::string &message) {
   had_error = true;
   std::cerr << ansi_bold << ansi_red << "[line " << line
             << "] Error: " << ansi_reset << message << "\n";
+}
+
+void ErrorReporter::report_token(const Token &token, const std::string &message,
+                                 const SourceContext &ctx) {
+  report(token.span, message, token.line, ctx);
 }

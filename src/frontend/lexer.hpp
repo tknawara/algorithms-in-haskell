@@ -62,6 +62,20 @@ struct Token {
 
   Token(TokenType t, Span s, LiteralType l, int ln)
       : type(t), span(s), literal(l), line(ln) {}
+
+  // Get the lexeme (text) from the source context
+  std::string_view get_lexeme(const SourceContext &ctx) const {
+    return ctx.get_lexeme(span);
+  }
+
+  // Get the string value if this is an identifier/string token
+  std::string get_string_value(const SourceContext &ctx) const {
+    if (std::holds_alternative<std::string>(literal)) {
+      return std::get<std::string>(literal);
+    }
+    // For identifiers, extract from source
+    return std::string(get_lexeme(ctx));
+  }
 };
 
 class Lexer {

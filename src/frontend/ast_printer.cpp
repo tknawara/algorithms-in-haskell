@@ -8,13 +8,13 @@ struct AstVisitor {
   explicit AstVisitor(const SourceContext &c) : ctx(c) {}
 
   std::string operator()(const Binary &b) const {
-    std::string op_str(ctx.get_lexeme(b.op.span));
+    std::string op_str(b.op.get_lexeme(ctx));
     return "(" + op_str + " " + print(*b.left, ctx) + " " +
            print(*b.right, ctx) + ")";
   }
 
   std::string operator()(const Unary &u) const {
-    std::string op_str(ctx.get_lexeme(u.op.span));
+    std::string op_str(u.op.get_lexeme(ctx));
     return "(" + op_str + " " + print(*u.right, ctx) + ")";
   }
 

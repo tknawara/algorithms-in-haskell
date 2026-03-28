@@ -57,7 +57,7 @@ Stmt Parser::parse_print_statement() {
 
 Stmt Parser::parse_var_declaration_statement() {
   Token name_token = consume(TokenType::identifier, "Expect variable name.");
-  std::string name = std::string(ctx.get_lexeme(name_token.span));
+  std::string name = std::string(name_token.get_lexeme(ctx));
   
   std::optional<std::unique_ptr<Expr>> initializer = std::nullopt;
   if (match({TokenType::equal})) {
@@ -151,7 +151,7 @@ Expr Parser::parse_prefix() {
 
   if (match({TokenType::identifier})) {
     Token name_token = previous();
-    std::string name = std::string(ctx.get_lexeme(name_token.span));
+    std::string name = std::string(name_token.get_lexeme(ctx));
     return Expr(Variable(name, name_token));
   }
 

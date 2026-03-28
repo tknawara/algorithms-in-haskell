@@ -61,7 +61,7 @@ int cmd_tokenize(Pipeline &p, SourceContext &ctx) {
     std::string type_name = format_token_type(token.type);
     std::string lexeme_text = (token.type == TokenType::eof)
                                   ? ""
-                                  : std::string(ctx.get_lexeme(token.span));
+                                  : std::string(token.get_lexeme(ctx));
     std::cout << type_name << " " << lexeme_text << " "
               << format::literal(token.literal) << "\n";
   }

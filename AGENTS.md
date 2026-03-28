@@ -171,6 +171,23 @@ To add a new statement (e.g., `if` statement):
    - Add case to `StatementExecutor` visitor
    - Implement the execution logic
 
+## Token Convenience Methods
+
+```cpp
+// Get the lexeme text from source (returns string_view)
+token.get_lexeme(ctx)
+
+// Get string value (works for string literals and identifiers)
+token.get_string_value(ctx)
+```
+
+## Error Reporting Convenience
+
+```cpp
+// Report error at a token's location (extracts span and line automatically)
+ErrorReporter::report_token(token, message, ctx);
+```
+
 ## Variable Implementation Details
 
 **Variable Declaration:**
@@ -178,7 +195,7 @@ To add a new statement (e.g., `if` statement):
 - `var y;` - declares without initializer (nil)
 
 **Variable Name Storage:**
-- Parser extracts variable names using `ctx.get_lexeme(token.span)` from the source
+- Parser extracts variable names using `token.get_lexeme(ctx)` from the source
 - `Variable` AST node stores: `name` (string) + `name_token` (for error line numbers)
 - `VarDeclaration` AST node stores: `name` (string) + `name_token` + `initializer`
 - Identifier tokens themselves don't store the name in the literal field
