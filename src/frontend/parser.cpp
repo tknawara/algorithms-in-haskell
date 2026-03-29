@@ -1,6 +1,8 @@
 #include "frontend/parser.hpp"
 #include "core/error_reporter.hpp"
 #include "frontend/ast.hpp"
+#include "frontend/lexer.hpp"
+#include <optional>
 
 Parser::Parser(const std::vector<Token> &tokens, const SourceContext &context)
     : tokens(tokens), ctx(context) {}
@@ -50,6 +52,10 @@ Stmt Parser::parse_statement() {
     return parse_block_statement();
   }
 
+  if (match({TokenType::if_token})) {
+    return parse_if_statement();
+  }
+
   return parse_expression_statement();
 }
 
@@ -86,6 +92,22 @@ Stmt Parser::parse_block_statement() {
 
   consume(TokenType::right_brace, "Expect '}' after block.");
   return Stmt(BlockStmt(std::move(statements)));
+}
+
+Stmt Parser::parse_if_statement() {
+  consume(TokenType::left_paren, "Expect '(' before condition");
+  auto condition = parse_expression();
+  consume(TokenType::right_paren, "Expect ')' after condition");
+  auto body = parse_statement();
+  std::optional<std::unique_ptr<Stmt>> else_stmt = std::nullopt;
+
+  if (match({TokenType::else_token})) {
+    else_stmt = std::make_unique<Stmt>(parse_statement());
+  }
+
+  return Stmt(IfStmt(std::make_unique<Expr>(std::move(condition)),
+                     std::make_unique<Stmt>(std::move(body)),
+                     std::move(else_stmt)));
 }
 
 // --- Precedence Climbing Core ---
@@ -145,7 +167,8 @@ Expr Parser::parse_expression(int min_precedence) {
 
       // Extract the variable token from lhs
       auto &var = std::get<Variable>(lhs.node);
-      lhs = Expr(Assign(var.name_token, std::make_unique<Expr>(std::move(rhs))));
+      lhs =
+          Expr(Assign(var.name_token, std::make_unique<Expr>(std::move(rhs))));
     } else {
       int next_min_precedence = op_precedence + 1;
       Expr rhs = parse_expression(next_min_precedence);

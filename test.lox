@@ -6,3 +6,7 @@
     var foo = "after";
     print foo;
 }
+
+if (true) {
+    print "hello world true if statement";
+}

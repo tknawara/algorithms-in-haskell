@@ -1,4 +1,5 @@
 #include "frontend/ast.hpp"
+#include <memory>
 
 // ============================================================================
 // Expression Type Implementations
@@ -36,9 +37,16 @@ PrintStmt::PrintStmt(std::unique_ptr<Expr> expr)
     : expression(std::move(expr)) {}
 PrintStmt::~PrintStmt() = default;
 
-VarDeclaration::VarDeclaration(Token t, std::optional<std::unique_ptr<Expr>> init)
+VarDeclaration::VarDeclaration(Token t,
+                               std::optional<std::unique_ptr<Expr>> init)
     : name_token(t), initializer(std::move(init)) {}
 VarDeclaration::~VarDeclaration() = default;
 
 BlockStmt::BlockStmt(std::vector<Stmt> stmts) : statements(std::move(stmts)) {}
 BlockStmt::~BlockStmt() = default;
+
+IfStmt::IfStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body,
+               std::optional<std::unique_ptr<Stmt>> else_stmt)
+    : condition(std::move(condition)), body(std::move(body)),
+      else_stmt(std::move(else_stmt)) {}
+IfStmt::~IfStmt() = default;

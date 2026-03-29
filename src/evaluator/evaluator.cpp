@@ -1,8 +1,10 @@
 #include "evaluator/evaluator.hpp"
 
 #include <iostream>
+#include <variant>
 
 #include "core/source_context.hpp"
+#include "frontend/ast.hpp"
 
 namespace evaluator {
 
@@ -245,6 +247,15 @@ struct StatementExecutor {
     // Execute all statements in the new scope
     for (const auto &s : stmt.statements) {
       execute(s, block_env, ctx);
+    }
+  }
+
+  void operator()(const IfStmt &stmt) const {
+    LoxValue value = evaluate(*stmt.condition, env, ctx);
+    if (is_truthy(value)) {
+      execute(*stmt.body, env, ctx);
+    } else if (stmt.else_stmt.has_value()) {
+      execute(*stmt.else_stmt->get(), env, ctx);
     }
   }
 };

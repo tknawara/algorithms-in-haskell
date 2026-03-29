@@ -229,3 +229,72 @@ ErrorReporter::report_token(token, message, ctx);
 3. **Precedence climbing**: The loop condition is `>` not `>=` to avoid consuming non-operators
 4. **String handling**: `stringify()` removes quotes; `format::value()` keeps them
 5. **Error recovery**: Parser uses `synchronize()` to skip to next statement boundary on error
+
+---
+
+# Future Extensions (Not Yet Implemented)
+
+## Module System Proposal
+
+This is a proposal for adding a module system to the Lox interpreter. This is **not part of the standard Codecrafters challenge** but could be an interesting extension to explore after completing the core features (functions, classes, inheritance).
+
+### Syntax Options
+
+```lox
+// Option A: Simple import (everything into global scope)
+import "module.lox";
+
+// Option B: Named import with namespace
+import math from "math.lox";
+print math.add(1, 2);
+
+// Option C: Selective import
+import { add, subtract } from "math.lox";
+```
+
+### Export Mechanism
+
+Lox doesn't currently have exports. You'd need to add an `export` keyword:
+
+```lox
+// math.lox
+var add = fun(a, b) { return a + b; };
+var subtract = fun(a, b) { return a - b; };
+
+// Export statement (new keyword)
+export add, subtract;
+// or: export { add, subtract };
+```
+
+### Required Components
+
+1. **Module Registry**: Cache loaded modules to prevent duplicate loading and handle circular imports
+2. **Module Resolution**: Resolve relative paths (`"./utils.lox"` vs `"lib/math.lox"`)
+3. **Module Isolation**: Each module gets its own Environment (child of global)
+4. **Export Tracking**: Track which values are exported from each module
+
+### Implementation Steps
+
+1. **AST** (`ast.hpp`): Add `ImportStmt` and `ExportStmt` nodes to `Stmt` variant
+2. **Lexer** (`lexer.hpp/cpp`): Add `import` and `export` tokens
+3. **Parser** (`parser.hpp/cpp`): 
+   - Parse `import` statements
+   - Parse `export` statements
+4. **Module System** (new files):
+   - `evaluator/module.hpp` - `Module` class (environment + exports)
+   - `evaluator/module_loader.hpp` - `ModuleLoader` class (file I/O, caching, circular detection)
+5. **Evaluator** (`evaluator.cpp`):
+   - Handle `ImportStmt` - delegate to ModuleLoader
+   - Handle `ExportStmt` - mark variables as exported
+
+### Design Decisions to Consider
+
+- **When to resolve imports?** At parse time vs at runtime
+- **Circular imports**: Error or allow with restrictions?
+- **Export semantics**: Values or references? (functions vs mutable variables)
+- **Module path resolution**: Relative to file? Search path?
+- **Standard library**: Built-in modules? (`import std.io;`)
+
+### Recommendation
+
+Wait until after completing the standard Codecrafters stages (functions, classes, inheritance). Modules build on these features (especially closures for capturing module state).

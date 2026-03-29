@@ -44,6 +44,7 @@ private:
   Stmt parse_var_declaration_statement();
   Stmt parse_expression_statement();
   Stmt parse_block_statement();
+  Stmt parse_if_statement();
 
   Expr parse_expression(int min_precedence = 0);
   Expr parse_prefix();

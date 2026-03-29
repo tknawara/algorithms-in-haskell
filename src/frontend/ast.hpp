@@ -57,7 +57,8 @@ struct Grouping {
   Grouping &operator=(Grouping &&) = default;
 };
 
-// Variable reference expression: just the token, name extracted from source during eval
+// Variable reference expression: just the token, name extracted from source
+// during eval
 struct Variable {
   Token name_token;
 
@@ -133,8 +134,22 @@ struct BlockStmt {
   BlockStmt &operator=(BlockStmt &&) = default;
 };
 
+struct IfStmt {
+  std::unique_ptr<Expr> condition;
+  std::unique_ptr<Stmt> body;
+  std::optional<std::unique_ptr<Stmt>> else_stmt;
+
+  IfStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body,
+         std::optional<std::unique_ptr<Stmt>> else_stmt);
+  ~IfStmt();
+
+  IfStmt(IfStmt &&) = default;
+  IfStmt &operator=(IfStmt &&) = default;
+};
+
 struct Stmt {
-  std::variant<ExpressionStmt, PrintStmt, VarDeclaration, BlockStmt> node;
+  std::variant<ExpressionStmt, PrintStmt, VarDeclaration, BlockStmt, IfStmt>
+      node;
 
   template <typename T> Stmt(T &&n) : node(std::forward<T>(n)) {}
   Stmt(Stmt &&) = default;
