@@ -30,6 +30,7 @@ struct Pipeline {
   bool parse_expression(); // Parse a single expression (for evaluate command)
   bool
   parse_program(); // Parse a full program with statements (for run command)
+  bool analyze();  // Semantic analysis pass
 
   std::pair<LoxValue, bool> eval();
   bool run(); // Execute statements

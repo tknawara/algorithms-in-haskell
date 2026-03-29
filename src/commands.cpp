@@ -9,6 +9,7 @@
 #include "frontend/ast_printer.hpp"
 #include "frontend/lexer.hpp"
 #include "frontend/parser.hpp"
+#include "sema/sema.hpp"
 
 Pipeline::Pipeline(SourceContext &context) : ctx(context) {}
 
@@ -30,6 +31,17 @@ bool Pipeline::parse_program() {
   Parser parser(tokens, ctx);
   program = parser.parse();
   return !ErrorReporter::had_error;
+}
+
+// Semantic analysis pass
+bool Pipeline::analyze() {
+  try {
+    sema::analyze(program);
+    return true;
+  } catch (const SemaError &error) {
+    ErrorReporter::report(error.span, error.what(), error.line, ctx);
+    return false;
+  }
 }
 
 std::pair<LoxValue, bool> Pipeline::eval() {
@@ -87,6 +99,9 @@ int cmd_evaluate(Pipeline &p, SourceContext & /*ctx*/) {
 
 int cmd_run(Pipeline &p, SourceContext & /*ctx*/) {
   if (ErrorReporter::had_error)
+    return 65;
+  // Run semantic analysis before execution
+  if (!p.analyze())
     return 65;
   if (!p.run())
     return 70;

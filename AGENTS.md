@@ -1,179 +1,65 @@
 # Interpreter - Agent Documentation
 
-## Build Instructions
-
-**Important**: Use the `build-agent` folder for building (not `build`), as this is the folder mounted in the Docker environment.
+## Quick Reference
 
 ```bash
-# Clean build
-cd /home/tarek/workspace/cpp/codecrafters-interpreter-cpp
-rm -rf build-agent
-mkdir build-agent
-cd build-agent
-cmake ..
-make -j4
-
-# Or use the one-liner:
+# Build (local development)
 cmake -B build-agent -S . && cmake --build ./build-agent
-```
 
-The compiled binary will be at `./build-agent/interpreter`.
+# Or use the dev script
+./dev_run.sh run test.lox
+
+# Compiled binary
+./build-agent/interpreter
+```
 
 ## Project Structure
 
 ```
 src/
 ├── main.cpp              # Entry point, command dispatch
-├── commands.cpp/hpp      # Command handlers (tokenize, parse, evaluate, run)
+├── commands.cpp/hpp      # Command pipeline (lex -> parse -> sema -> eval/run)
 ├── core/                 # Core utilities
-│   ├── error_reporter    # Error reporting system
+│   ├── error_reporter    # Error reporting system (singleton pattern)
 │   ├── file_io           # File reading utilities
 │   ├── format            # Value formatting for output
-│   ├── source_context    # Source code management
-│   └── span              # Source location tracking
+│   ├── source_context    # Source code management (owns the source string)
+│   └── span              # Source location tracking (offset + length)
 ├── frontend/             # Frontend (lexer + parser + AST)
-│   ├── lexer.cpp/hpp     # Tokenizer
-│   ├── parser.cpp/hpp    # Recursive descent parser
-│   ├── ast.cpp/hpp       # AST node definitions
-│   └── ast_printer.cpp/hpp  # AST visualization
+│   ├── lexer.cpp/hpp     # Regex-based tokenizer
+│   ├── parser.cpp/hpp    # Recursive descent parser with precedence climbing
+│   ├── ast.cpp/hpp       # AST node definitions (using std::variant)
+│   └── ast_printer.cpp/hpp  # AST visualization (visitor pattern)
+├── sema/                 # Semantic analysis (NEW)
+│   ├── sema.cpp/hpp      # Semantic validation pass
 └── evaluator/            # Tree-walk interpreter
     ├── evaluator.cpp/hpp # Expression evaluation + statement execution
+    └── environment.hpp   # Variable storage with parent scope support
 ```
 
 ## Architecture Overview
 
+### Pipeline Flow
+
+```
+Source File -> Lexer -> Parser -> Sema -> Evaluator
+                |         |        |        |
+             Tokens     AST     Checks   Execution
+```
+
+**Error handling at each stage:**
+- Lexer: Reports errors via `ErrorReporter`, continues tokenizing
+- Parser: Throws `ParseError`, caught by `synchronize()` for recovery
+- Sema: Throws `SemaError`, caught in `Pipeline::analyze()`
+- Evaluator: Throws `RuntimeError` with token info for line numbers
+
 ### 1. Lexer (`frontend/lexer.cpp`)
+
 - Uses regex-based maximal munch tokenization
 - Tokens: `TokenType`, `Span` (source location), `literal` (value)
-- Keywords recognized: `and`, `class`, `else`, `false`, `fun`, `for`, `if`, `nil`, `or`, `print`, `return`, `super`, `this`, `true`, `var`, `while`
+- Keywords: `and`, `class`, `else`, `false`, `fun`, `for`, `if`, `nil`, `or`, `print`, `return`, `super`, `this`, `true`, `var`, `while`
 
-### 2. AST (`frontend/ast.hpp`)
-
-**Expressions:**
-- `Literal` - numbers, strings, booleans, nil
-- `Unary` - prefix operators (`!`, `-`)
-- `Binary` - infix operators (`+`, `-`, `*`, `/`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `and`, `or`)
-- `Grouping` - parenthesized expressions
-- `Variable` - variable reference (stores token, name extracted from source during eval)
-- `Assign` - assignment expression (stores token, name extracted from source)
-
-**Statements:**
-- `ExpressionStmt` - expression followed by semicolon (result discarded)
-- `PrintStmt` - `print` keyword + expression + semicolon
-- `VarDeclaration` - `var` + identifier + optional initializer + semicolon
-- `Program` - `std::vector<Stmt>` representing a full program
-
-### 3. Parser (`frontend/parser.cpp`)
-
-**Expression Parsing:**
-- Uses precedence climbing (top-down operator precedence)
-- Precedence levels (low to high): assignment, ternary, logic_or, logic_and, equality, comparison, term, factor, unary, primary
-- **Bug fix note**: The while loop condition uses `>` (not `>=`) to prevent consuming semicolons as operators
-
-**Statement Parsing:**
-- `parse()` - parses a full program (list of statements until EOF)
-- `parse_expression_only()` - parses a single expression (for backward compatibility)
-- `parse_statement()` - dispatches to print or expression statement
-- `parse_print_statement()` - handles `print <expr>;`
-- `parse_expression_statement()` - handles `<expr>;`
-
-### 4. Environment (`evaluator/environment.hpp`)
-
-Stores variable bindings during execution:
-- `define(name, value)` - creates/updates a variable
-- `get(name)` - retrieves a variable value (throws EnvironmentError if undefined)
-- `assign(name, value)` - updates an existing variable
-- Currently single global scope (nested scopes to be added later)
-
-### 5. Evaluator (`evaluator/evaluator.cpp`)
-
-**Expression Evaluation:**
-- `evaluate(const Expr&, Environment&)` - evaluates expressions and returns `LoxValue`
-- `LoxValue` = `std::variant<std::monostate, double, std::string, bool>`
-- Truthiness: `nil` and `false` are falsy, everything else is truthy
-- Operators: standard arithmetic, comparison, logical (`and`/`or` with short-circuiting)
-- Variable lookup: looks up name in environment
-
-**Statement Execution:**
-- `execute(const Stmt&, Environment&)` - executes a single statement
-- `execute_program(const Program&, Environment&)` - executes a list of statements
-- `VarDeclaration` - defines variable in environment (nil if no initializer)
-- `stringify()` - formats values for printing (no quotes on strings)
-
-### 5. Commands (`commands.cpp`)
-
-**Pipeline:**
-- `lex()` - runs lexer, stores tokens
-- `parse_expression()` - parses single expression into `expr_ast`
-- `parse_program()` - parses statements into `program`
-- `eval()` - evaluates `expr_ast`
-- `run()` - executes `program`
-
-**Commands:**
-- `tokenize` - prints tokens
-- `parse` - prints AST (expression mode)
-- `evaluate` - evaluates expression, prints result
-- `run` - executes statements (new)
-
-## Usage Examples
-
-### Run mode (statements)
-```bash
-./your_program.sh run program.lox
-```
-
-Input (`program.lox`):
-```lox
-var x = 5;
-var y = 10;
-print x + y;
-
-var msg = "hello";
-print msg;
-
-var z;
-print z;  // nil
-```
-
-Output:
-```
-15
-hello
-nil
-```
-
-### Evaluate mode (single expression)
-```bash
-./your_program.sh evaluate expr.lox
-```
-
-Input (`expr.lox`):
-```lox
-1 + 2 * 3
-```
-
-Output:
-```
-7
-```
-
-## Adding New Statement Types
-
-To add a new statement (e.g., `if` statement):
-
-1. **AST** (`ast.hpp`): Add new struct (e.g., `IfStmt`) and add it to the `Stmt` variant
-2. **AST** (`ast.cpp`): Add constructor/destructor implementation
-3. **Parser** (`parser.hpp`): Add `parse_if_statement()` declaration
-4. **Parser** (`parser.cpp`): 
-   - Add `parse_if_statement()` implementation
-   - Update `parse_statement()` to dispatch to it
-5. **Evaluator** (`evaluator.hpp`): Update if needed
-6. **Evaluator** (`evaluator.cpp`): 
-   - Add case to `StatementExecutor` visitor
-   - Implement the execution logic
-
-## Token Convenience Methods
-
+**Token convenience methods:**
 ```cpp
 // Get the lexeme text from source (returns string_view)
 token.get_lexeme(ctx)
@@ -182,119 +68,197 @@ token.get_lexeme(ctx)
 token.get_string_value(ctx)
 ```
 
-## Error Reporting Convenience
+### 2. AST (`frontend/ast.hpp`)
+
+**Design:** Uses `std::variant` for type-safe sum types with `std::unique_ptr` for ownership.
+
+**Expressions:**
+- `Literal` - numbers, strings, booleans, nil (`std::monostate`)
+- `Unary` - prefix operators (`!`, `-`)
+- `Binary` - infix operators (`+`, `-`, `*`, `/`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `and`, `or`)
+- `Grouping` - parenthesized expressions
+- `Variable` - variable reference (stores token, name extracted during eval)
+- `Assign` - assignment expression (right-associative: `a = b = 1`)
+
+**Statements:**
+- `ExpressionStmt` - expression followed by semicolon (result discarded)
+- `PrintStmt` - `print` keyword + expression + semicolon
+- `VarDeclaration` - `var` + identifier + optional initializer + semicolon
+- `BlockStmt` - `{ statement1; statement2; ... }` (creates new scope)
+- `IfStmt` - `if (condition) body [else else_stmt]`
+- `WhileStmt` - `while (condition) body`
+- `ForStmt` - `for (initializer; condition; increment) body`
+- `NoOpStmt` - Empty statement (placeholder)
+
+**Important AST patterns:**
+```cpp
+// AST nodes store tokens (not extracted strings) to preserve source location
+// Names are extracted during evaluation via token.get_lexeme(ctx)
+struct Variable {
+  Token name_token;  // Contains Span for error reporting
+};
+```
+
+### 3. Parser (`frontend/parser.cpp`)
+
+**Expression Parsing:**
+- Uses precedence climbing (top-down operator precedence)
+- Precedence levels (low to high): assignment, logic_or, logic_and, equality, comparison, term, factor, unary, primary
+- **Critical:** The while loop uses `>` (not `>=`) to prevent consuming semicolons as operators
+
+**Statement Parsing:**
+- `parse()` - parses a full program (list of statements until EOF)
+- `parse_statement()` - dispatches to specific statement parsers based on lookahead
+- Each statement parser consumes its trailing semicolon
+
+**Error Recovery:**
+```cpp
+void synchronize();  // Skip tokens until statement boundary
+```
+
+### 4. Semantic Analysis (`sema/sema.cpp`) - NEW
+
+**Purpose:** Validation pass between parsing and execution.
+
+**Current checks:**
+1. Variable declarations cannot be direct bodies of:
+   - `for` loops
+   - `while` loops
+   - `if` statements
+   - `else` branches
+
+**Design pattern:** Visitor struct with `operator()` overloads:
+```cpp
+struct SemaChecker {
+  void operator()(const ForStmt& stmt) const {
+    check_body_not_var_decl(*stmt.body, "for loop");
+    analyze_stmt(*stmt.body);
+    if (stmt.initializer) analyze_stmt(*stmt.initializer);
+  }
+  void operator()(const VarDeclaration&) const { /* nothing */ }
+  // ... etc
+};
+```
+
+**Error handling:**
+```cpp
+throw SemaError(var_decl.name_token.span, "message", var_decl.name_token.line);
+```
+
+### 5. Evaluator (`evaluator/evaluator.cpp`)
+
+**Expression Evaluation:**
+```cpp
+LoxValue evaluate(const Expr& expr, Environment& env, const SourceContext& ctx);
+```
+- `LoxValue` = `std::variant<std::monostate, double, std::string, bool>`
+- Truthiness: `nil` and `false` are falsy, everything else truthy
+- Short-circuiting: `and`/`or` don't evaluate RHS if not needed
+- Variable lookup: Extract name from token, look up in environment
+
+**Statement Execution:**
+```cpp
+void execute(const Stmt& stmt, Environment& env, const SourceContext& ctx);
+void execute_program(const Program& program, Environment& env, const SourceContext& ctx);
+```
+
+**Design pattern:** Visitor struct `StatementExecutor` with `operator()` overloads for each statement type.
+
+### 6. Environment (`evaluator/environment.hpp`)
 
 ```cpp
-// Report error at a token's location (extracts span and line automatically)
+class Environment {
+  Environment* parent;  // nullptr for global scope
+  std::unordered_map<std::string, LoxValue> values;
+  
+  void define(name, value);   // Create new variable
+  LoxValue get(name);         // Lookup (throws EnvironmentError if undefined)
+  void assign(name, value);   // Update existing (throws if undefined)
+};
+```
+
+**Scope chain:** Each `BlockStmt` creates a new `Environment` with the current as parent:
+```cpp
+void operator()(const BlockStmt& stmt) const {
+  Environment block_env(&env);  // Parent = current env
+  for (const auto& s : stmt.statements) {
+    execute(s, block_env, ctx);
+  }
+}
+```
+
+## Common Patterns
+
+### Visitor Pattern with std::variant
+
+```cpp
+// Define a visitor struct with overloads for each alternative
+struct MyVisitor {
+  void operator()(const Binary& expr) { /* handle binary */ }
+  void operator()(const Literal& expr) { /* handle literal */ }
+  // ... etc for all alternatives
+};
+
+// Apply to variant
+std::visit(MyVisitor{}, expr.node);
+```
+
+### Error Reporting
+
+```cpp
+// From anywhere
+ErrorReporter::report(span, message, line, ctx);
+
+// From a token (convenience)
 ErrorReporter::report_token(token, message, ctx);
+
+// Check if any errors occurred
+if (ErrorReporter::had_error) { /* handle */ }
 ```
 
-## Variable Implementation Details
+### Token to String
 
-**Variable Declaration:**
-- `var x = 5;` - declares with initializer
-- `var y;` - declares without initializer (nil)
-
-**Variable Name Storage:**
-- AST nodes store only `Token` (which contains Span for source location)
-- Evaluator extracts names on-demand using `token.get_lexeme(ctx)`
-- This keeps AST lightweight and maintains source location for error reporting
-- `Variable`, `Assign`, and `VarDeclaration` all use this pattern
-
-**Evaluator with SourceContext:**
-- `evaluate(expr, env, ctx)` now takes `SourceContext` to resolve names
-- `execute(stmt, env, ctx)` passes context through statement execution
-- Allows runtime errors to show source location and potentially source snippets
-
-**Variable Assignment:**
-- Assignment is an expression: `a = 1` returns 1
-- Chained assignment: `a = b = 1` means `a = (b = 1)`
-- Right-associative parsing with precedence climbing
-- `Assign` AST node stores: name, name_token, value expression
-- Evaluator assigns to environment and returns the value
-- Invalid assignment target (e.g., `1 = 2`) throws parse error
-
-**Variable Lookup:**
-- Evaluator looks up the name string in the Environment
-- RuntimeError thrown with token info if undefined
-
-**Future Extensions:**
-- Block scopes
-- Function scopes with closures
-
-## Common Gotchas
-
-1. **Build folder**: Always use `build-agent`, not `build`
-2. **Semicolons**: The parser expects semicolons after every statement
-3. **Precedence climbing**: The loop condition is `>` not `>=` to avoid consuming non-operators
-4. **String handling**: `stringify()` removes quotes; `format::value()` keeps them
-5. **Error recovery**: Parser uses `synchronize()` to skip to next statement boundary on error
-
----
-
-# Future Extensions (Not Yet Implemented)
-
-## Module System Proposal
-
-This is a proposal for adding a module system to the Lox interpreter. This is **not part of the standard Codecrafters challenge** but could be an interesting extension to explore after completing the core features (functions, classes, inheritance).
-
-### Syntax Options
-
-```lox
-// Option A: Simple import (everything into global scope)
-import "module.lox";
-
-// Option B: Named import with namespace
-import math from "math.lox";
-print math.add(1, 2);
-
-// Option C: Selective import
-import { add, subtract } from "math.lox";
+```cpp
+// During evaluation (when you have ctx)
+std::string name = std::string(token.get_lexeme(ctx));
 ```
 
-### Export Mechanism
+## Build Scripts
 
-Lox doesn't currently have exports. You'd need to add an `export` keyword:
+| Script | Purpose | Build Dir |
+|--------|---------|-----------|
+| `your_program.sh` | Official (Docker/codecrafters) | `build/` |
+| `dev_run.sh` | Local development | `build-agent/` |
 
-```lox
-// math.lox
-var add = fun(a, b) { return a + b; };
-var subtract = fun(a, b) { return a - b; };
+## Exit Codes
 
-// Export statement (new keyword)
-export add, subtract;
-// or: export { add, subtract };
-```
+- `0` - Success
+- `1` - Unknown command
+- `65` - Compile error (parse/sema/lex errors)
+- `70` - Runtime error
 
-### Required Components
+## Adding New Features
 
-1. **Module Registry**: Cache loaded modules to prevent duplicate loading and handle circular imports
-2. **Module Resolution**: Resolve relative paths (`"./utils.lox"` vs `"lib/math.lox"`)
-3. **Module Isolation**: Each module gets its own Environment (child of global)
-4. **Export Tracking**: Track which values are exported from each module
+### New Statement Type
 
-### Implementation Steps
+1. **AST** (`ast.hpp`): Add struct and add to `Stmt` variant
+2. **AST** (`ast.cpp`): Add constructor/destructor implementation  
+3. **Parser** (`parser.hpp`): Add `parse_X_statement()` declaration
+4. **Parser** (`parser.cpp`): Implement parser + add to `parse_statement()` dispatch
+5. **Sema** (`sema.cpp`): Add `operator()(const XStmt&)` to `SemaChecker`
+6. **Evaluator** (`evaluator.cpp`): Add case to `StatementExecutor` visitor
 
-1. **AST** (`ast.hpp`): Add `ImportStmt` and `ExportStmt` nodes to `Stmt` variant
-2. **Lexer** (`lexer.hpp/cpp`): Add `import` and `export` tokens
-3. **Parser** (`parser.hpp/cpp`): 
-   - Parse `import` statements
-   - Parse `export` statements
-4. **Module System** (new files):
-   - `evaluator/module.hpp` - `Module` class (environment + exports)
-   - `evaluator/module_loader.hpp` - `ModuleLoader` class (file I/O, caching, circular detection)
-5. **Evaluator** (`evaluator.cpp`):
-   - Handle `ImportStmt` - delegate to ModuleLoader
-   - Handle `ExportStmt` - mark variables as exported
+### New Semantic Check
 
-### Design Decisions to Consider
+1. Add check to appropriate `operator()` in `SemaChecker`
+2. Throw `SemaError(span, message, line)` on violation
+3. The check runs automatically via `std::visit(SemaChecker{}, stmt.node)`
 
-- **When to resolve imports?** At parse time vs at runtime
-- **Circular imports**: Error or allow with restrictions?
-- **Export semantics**: Values or references? (functions vs mutable variables)
-- **Module path resolution**: Relative to file? Search path?
-- **Standard library**: Built-in modules? (`import std.io;`)
+## Gotchas
 
-### Recommendation
-
-Wait until after completing the standard Codecrafters stages (functions, classes, inheritance). Modules build on these features (especially closures for capturing module state).
+1. **Build folder confusion:** Use `build-agent` locally, `build` for Docker
+2. **Semicolons:** Parser expects them after every statement
+3. **Precedence climbing:** Loop condition is `>` not `>=`
+4. **String handling:** `stringify()` removes quotes; `format::value()` keeps them
+5. **Error recovery:** Parser uses `synchronize()` which can skip tokens aggressively
+6. **Token members:** Tokens store `literal` (parsed value) separate from lexeme text
