@@ -147,8 +147,20 @@ struct IfStmt {
   IfStmt &operator=(IfStmt &&) = default;
 };
 
+struct WhileStmt {
+  std::unique_ptr<Expr> condition;
+  std::unique_ptr<Stmt> body;
+
+  WhileStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body);
+  ~WhileStmt();
+
+  WhileStmt(WhileStmt &&) = default;
+  WhileStmt &operator=(WhileStmt &&) = default;
+};
+
 struct Stmt {
-  std::variant<ExpressionStmt, PrintStmt, VarDeclaration, BlockStmt, IfStmt>
+  std::variant<ExpressionStmt, PrintStmt, VarDeclaration, BlockStmt, IfStmt,
+               WhileStmt>
       node;
 
   template <typename T> Stmt(T &&n) : node(std::forward<T>(n)) {}

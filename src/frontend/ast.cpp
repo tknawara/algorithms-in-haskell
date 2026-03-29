@@ -50,3 +50,8 @@ IfStmt::IfStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body,
     : condition(std::move(condition)), body(std::move(body)),
       else_stmt(std::move(else_stmt)) {}
 IfStmt::~IfStmt() = default;
+
+WhileStmt::WhileStmt(std::unique_ptr<Expr> condition,
+                     std::unique_ptr<Stmt> body)
+    : condition(std::move(condition)), body(std::move(body)) {}
+WhileStmt::~WhileStmt() = default;

@@ -258,6 +258,14 @@ struct StatementExecutor {
       execute(*stmt.else_stmt->get(), env, ctx);
     }
   }
+
+  void operator()(const WhileStmt &stmt) const {
+    LoxValue value = evaluate(*stmt.condition, env, ctx);
+    while (is_truthy(value)) {
+      execute(*stmt.body, env, ctx);
+      value = evaluate(*stmt.condition, env, ctx);
+    }
+  }
 };
 
 void execute(const Stmt &stmt, Environment &env, const SourceContext &ctx) {

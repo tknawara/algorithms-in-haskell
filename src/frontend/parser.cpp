@@ -56,6 +56,10 @@ Stmt Parser::parse_statement() {
     return parse_if_statement();
   }
 
+  if (match({TokenType::while_token})) {
+    return parse_while_statement();
+  }
+
   return parse_expression_statement();
 }
 
@@ -108,6 +112,16 @@ Stmt Parser::parse_if_statement() {
   return Stmt(IfStmt(std::make_unique<Expr>(std::move(condition)),
                      std::make_unique<Stmt>(std::move(body)),
                      std::move(else_stmt)));
+}
+
+Stmt Parser::parse_while_statement() {
+  consume(TokenType::left_paren, "Expect '(' before condition");
+  auto condition = parse_expression();
+  consume(TokenType::right_paren, "Expect ')' after condition");
+  auto body = parse_statement();
+
+  return Stmt(WhileStmt(std::make_unique<Expr>(std::move(condition)),
+                        std::make_unique<Stmt>(std::move(body))));
 }
 
 // --- Precedence Climbing Core ---
