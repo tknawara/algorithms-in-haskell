@@ -46,6 +46,10 @@ Stmt Parser::parse_statement() {
     return parse_print_statement();
   }
 
+  if (match({TokenType::left_brace})) {
+    return parse_block_statement();
+  }
+
   return parse_expression_statement();
 }
 
@@ -71,6 +75,17 @@ Stmt Parser::parse_expression_statement() {
   Expr value = parse_expression();
   consume(TokenType::semicolon, "Expect ';' after expression.");
   return Stmt(ExpressionStmt(std::make_unique<Expr>(std::move(value))));
+}
+
+Stmt Parser::parse_block_statement() {
+  std::vector<Stmt> statements;
+
+  while (!check(TokenType::right_brace) && !is_at_end()) {
+    statements.push_back(parse_statement());
+  }
+
+  consume(TokenType::right_brace, "Expect '}' after block.");
+  return Stmt(BlockStmt(std::move(statements)));
 }
 
 // --- Precedence Climbing Core ---

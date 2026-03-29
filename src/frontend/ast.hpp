@@ -121,8 +121,20 @@ struct VarDeclaration {
   VarDeclaration &operator=(VarDeclaration &&) = default;
 };
 
+// Block statement: { statement1; statement2; ... }
+// Creates a new scope for variable declarations
+struct BlockStmt {
+  std::vector<Stmt> statements;
+
+  explicit BlockStmt(std::vector<Stmt> stmts);
+  ~BlockStmt();
+
+  BlockStmt(BlockStmt &&) = default;
+  BlockStmt &operator=(BlockStmt &&) = default;
+};
+
 struct Stmt {
-  std::variant<ExpressionStmt, PrintStmt, VarDeclaration> node;
+  std::variant<ExpressionStmt, PrintStmt, VarDeclaration, BlockStmt> node;
 
   template <typename T> Stmt(T &&n) : node(std::forward<T>(n)) {}
   Stmt(Stmt &&) = default;

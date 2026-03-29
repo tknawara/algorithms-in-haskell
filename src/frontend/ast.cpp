@@ -39,3 +39,6 @@ PrintStmt::~PrintStmt() = default;
 VarDeclaration::VarDeclaration(Token t, std::optional<std::unique_ptr<Expr>> init)
     : name_token(t), initializer(std::move(init)) {}
 VarDeclaration::~VarDeclaration() = default;
+
+BlockStmt::BlockStmt(std::vector<Stmt> stmts) : statements(std::move(stmts)) {}
+BlockStmt::~BlockStmt() = default;

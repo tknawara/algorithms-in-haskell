@@ -238,6 +238,15 @@ struct StatementExecutor {
     std::string name = std::string(stmt.name_token.get_lexeme(ctx));
     env.define(name, value);
   }
+
+  void operator()(const BlockStmt &stmt) const {
+    // Create a new environment with current as parent
+    Environment block_env(&env);
+    // Execute all statements in the new scope
+    for (const auto &s : stmt.statements) {
+      execute(s, block_env, ctx);
+    }
+  }
 };
 
 void execute(const Stmt &stmt, Environment &env, const SourceContext &ctx) {
