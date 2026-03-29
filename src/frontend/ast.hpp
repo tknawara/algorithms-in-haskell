@@ -158,9 +158,25 @@ struct WhileStmt {
   WhileStmt &operator=(WhileStmt &&) = default;
 };
 
+struct ForStmt {
+  std::unique_ptr<Stmt> initializer;  // VarDeclaration, ExpressionStmt, or NoOp (nullptr = empty)
+  std::unique_ptr<Expr> condition;    // nullptr means "true"
+  std::unique_ptr<Expr> increment;    // nullptr means no increment
+  std::unique_ptr<Stmt> body;
+
+  ForStmt(std::unique_ptr<Stmt> init, std::unique_ptr<Expr> cond,
+          std::unique_ptr<Expr> inc, std::unique_ptr<Stmt> body);
+  ~ForStmt();
+
+  ForStmt(ForStmt &&) = default;
+  ForStmt &operator=(ForStmt &&) = default;
+};
+
+struct NoOpStmt {};
+
 struct Stmt {
   std::variant<ExpressionStmt, PrintStmt, VarDeclaration, BlockStmt, IfStmt,
-               WhileStmt>
+               WhileStmt, ForStmt, NoOpStmt>
       node;
 
   template <typename T> Stmt(T &&n) : node(std::forward<T>(n)) {}

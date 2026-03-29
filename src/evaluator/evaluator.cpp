@@ -266,6 +266,38 @@ struct StatementExecutor {
       value = evaluate(*stmt.condition, env, ctx);
     }
   }
+
+  void operator()(const ForStmt &stmt) const {
+    // Create a new scope for the for loop (for the initializer)
+    Environment for_env(&env);
+
+    // Execute initializer if present
+    if (stmt.initializer) {
+      execute(*stmt.initializer, for_env, ctx);
+    }
+
+    // Loop
+    while (true) {
+      // Check condition (default to true/infinite loop if not present)
+      if (stmt.condition) {
+        LoxValue cond_val = evaluate(*stmt.condition, for_env, ctx);
+        if (!is_truthy(cond_val))
+          break;
+      }
+
+      // Execute body
+      execute(*stmt.body, for_env, ctx);
+
+      // Execute increment
+      if (stmt.increment) {
+        evaluate(*stmt.increment, for_env, ctx);
+      }
+    }
+  }
+
+  void operator()(const NoOpStmt &) const {
+    // Do nothing
+  }
 };
 
 void execute(const Stmt &stmt, Environment &env, const SourceContext &ctx) {

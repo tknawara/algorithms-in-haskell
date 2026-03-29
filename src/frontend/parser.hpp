@@ -46,6 +46,8 @@ private:
   Stmt parse_block_statement();
   Stmt parse_if_statement();
   Stmt parse_while_statement();
+  Stmt parse_for_statement();
+  Stmt parse_noop_statement();
 
   Expr parse_expression(int min_precedence = 0);
   Expr parse_prefix();

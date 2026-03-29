@@ -59,6 +59,9 @@ Stmt Parser::parse_statement() {
   if (match({TokenType::while_token})) {
     return parse_while_statement();
   }
+  if (match({TokenType::for_token})) {
+    return parse_for_statement();
+  }
 
   return parse_expression_statement();
 }
@@ -123,6 +126,44 @@ Stmt Parser::parse_while_statement() {
   return Stmt(WhileStmt(std::make_unique<Expr>(std::move(condition)),
                         std::make_unique<Stmt>(std::move(body))));
 }
+
+Stmt Parser::parse_for_statement() {
+  consume(TokenType::left_paren, "Expect '(' after 'for'.");
+
+  // --- initializer ---
+  std::unique_ptr<Stmt> initializer = nullptr;
+  if (match({TokenType::semicolon})) {
+    // empty initializer - no statement needed
+  } else if (match({TokenType::var_token})) {
+    initializer = std::make_unique<Stmt>(parse_var_declaration_statement());
+    // parse_var_declaration_statement already consumes the ';'
+  } else {
+    // expression statement (consumes the ';')
+    initializer = std::make_unique<Stmt>(parse_expression_statement());
+  }
+
+  // --- condition ---
+  std::unique_ptr<Expr> condition = nullptr;
+  if (!check(TokenType::semicolon)) {
+    condition = std::make_unique<Expr>(parse_expression());
+  }
+  consume(TokenType::semicolon, "Expect ';' after for loop condition.");
+
+  // --- increment ---
+  std::unique_ptr<Expr> increment = nullptr;
+  if (!check(TokenType::right_paren)) {
+    increment = std::make_unique<Expr>(parse_expression());
+  }
+  consume(TokenType::right_paren, "Expect ')' after for clauses.");
+
+  // --- body ---
+  auto body = std::make_unique<Stmt>(parse_statement());
+
+  return Stmt(ForStmt(std::move(initializer), std::move(condition),
+                      std::move(increment), std::move(body)));
+}
+
+Stmt Parser::parse_noop_statement() { return Stmt(NoOpStmt()); }
 
 // --- Precedence Climbing Core ---
 

@@ -55,3 +55,9 @@ WhileStmt::WhileStmt(std::unique_ptr<Expr> condition,
                      std::unique_ptr<Stmt> body)
     : condition(std::move(condition)), body(std::move(body)) {}
 WhileStmt::~WhileStmt() = default;
+
+ForStmt::ForStmt(std::unique_ptr<Stmt> init, std::unique_ptr<Expr> cond,
+                 std::unique_ptr<Expr> inc, std::unique_ptr<Stmt> b)
+    : initializer(std::move(init)), condition(std::move(cond)),
+      increment(std::move(inc)), body(std::move(b)) {}
+ForStmt::~ForStmt() = default;
