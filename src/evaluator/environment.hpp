@@ -1,9 +1,11 @@
 #pragma once
 
-#include "frontend/lexer.hpp"
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+
+#include "evaluator/native.hpp"
+#include "frontend/lexer.hpp"
 
 using LoxValue = LiteralType;
 
@@ -24,6 +26,8 @@ private:
 public:
   // Create global scope (no parent)
   Environment() : parent(nullptr) {}
+
+  static NativeFnRegistry native_registry;
 
   // Create nested scope with parent
   explicit Environment(Environment *parent_env) : parent(parent_env) {}

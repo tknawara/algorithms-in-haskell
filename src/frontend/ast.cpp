@@ -25,6 +25,10 @@ Assign::Assign(Token t, std::unique_ptr<Expr> v)
     : name_token(t), value(std::move(v)) {}
 Assign::~Assign() = default;
 
+FnCall::FnCall(Token name_token, std::vector<std::unique_ptr<Expr>> args)
+    : name_token(std::move(name_token)), args(std::move(args)) {}
+FnCall::~FnCall() = default;
+
 // ============================================================================
 // Statement Type Implementations
 // ============================================================================

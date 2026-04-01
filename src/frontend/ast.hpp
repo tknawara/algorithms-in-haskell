@@ -69,6 +69,17 @@ struct Variable {
   Variable &operator=(Variable &&) = default;
 };
 
+struct FnCall {
+  Token name_token;
+  std::vector<std::unique_ptr<Expr>> args;
+
+  FnCall(Token name_token, std::vector<std::unique_ptr<Expr>> args);
+  ~FnCall();
+
+  FnCall(FnCall &&) = default;
+  FnCall &operator=(FnCall &&) = default;
+};
+
 // Assignment expression: target = value
 // Example: a = 1, or a = b = 1 (right-associative)
 struct Assign {
@@ -83,7 +94,7 @@ struct Assign {
 };
 
 struct Expr {
-  std::variant<Binary, Unary, Literal, Grouping, Variable, Assign> node;
+  std::variant<Binary, Unary, Literal, Grouping, Variable, Assign, FnCall> node;
 
   template <typename T> Expr(T &&n) : node(std::forward<T>(n)) {}
   Expr(Expr &&) = default;
@@ -159,9 +170,10 @@ struct WhileStmt {
 };
 
 struct ForStmt {
-  std::unique_ptr<Stmt> initializer;  // VarDeclaration, ExpressionStmt, or NoOp (nullptr = empty)
-  std::unique_ptr<Expr> condition;    // nullptr means "true"
-  std::unique_ptr<Expr> increment;    // nullptr means no increment
+  std::unique_ptr<Stmt>
+      initializer; // VarDeclaration, ExpressionStmt, or NoOp (nullptr = empty)
+  std::unique_ptr<Expr> condition; // nullptr means "true"
+  std::unique_ptr<Expr> increment; // nullptr means no increment
   std::unique_ptr<Stmt> body;
 
   ForStmt(std::unique_ptr<Stmt> init, std::unique_ptr<Expr> cond,

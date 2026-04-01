@@ -1,4 +1,5 @@
 #include "ast_printer.hpp"
+#include <format>
 
 namespace ast_printer {
 
@@ -50,6 +51,11 @@ struct AstVisitor {
   std::string operator()(const Assign &a) const {
     std::string name = std::string(a.name_token.get_lexeme(ctx));
     return "(= " + name + " " + print(*a.value, ctx) + ")";
+  }
+
+  std::string operator()(const FnCall &fncall) const {
+    std::string name = std::string(fncall.name_token.get_lexeme(ctx));
+    return std::format("<Fn #{}>", name);
   }
 };
 

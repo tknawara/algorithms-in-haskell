@@ -6,6 +6,7 @@
 #include "core/format.hpp"
 #include "evaluator/environment.hpp"
 #include "evaluator/evaluator.hpp"
+#include "evaluator/runtime_error.hpp"
 #include "frontend/ast_printer.hpp"
 #include "frontend/lexer.hpp"
 #include "frontend/parser.hpp"

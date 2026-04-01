@@ -4,6 +4,7 @@
 #include <variant>
 
 #include "core/source_context.hpp"
+#include "evaluator/runtime_error.hpp"
 #include "frontend/ast.hpp"
 
 namespace evaluator {
@@ -141,6 +142,14 @@ struct EvaluatorVisitor {
   LoxValue operator()(const Assign &expr) const {
     // This should not be called directly - evaluate() handles Assign specially
     return std::monostate{};
+  }
+
+  LoxValue operator()(const FnCall &fncall) const {
+    std::vector<LoxValue> evaluated_args;
+    for (const auto &arg : fncall.args) {
+      evaluated_args.push_back(evaluate(*arg, env, ctx));
+    }
+    return env.native_registry.execute(fncall.name_token, evaluated_args, ctx);
   }
 };
 

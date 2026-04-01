@@ -261,6 +261,18 @@ Expr Parser::parse_prefix() {
 
   if (match({TokenType::identifier})) {
     Token name_token = previous();
+    if (match({TokenType::left_paren})) {
+      std::vector<std::unique_ptr<Expr>> args;
+      while (!check(TokenType::right_paren) && !is_at_end()) {
+        if (!args.empty()) {
+          consume(TokenType::comma, "Expect ',' after argument");
+          args.push_back(std::make_unique<Expr>(parse_prefix()));
+        }
+      }
+
+      consume(TokenType::right_paren, "Expect ')' after function call.");
+      return FnCall(name_token, std::move(args));
+    }
     return Expr(Variable(name_token));
   }
 
